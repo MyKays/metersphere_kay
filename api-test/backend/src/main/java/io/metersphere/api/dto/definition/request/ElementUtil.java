@@ -43,6 +43,7 @@ import io.metersphere.metadata.service.FileMetadataService;
 import io.metersphere.plugin.core.MsParameter;
 import io.metersphere.plugin.core.MsTestElement;
 import io.metersphere.request.BodyFile;
+import io.metersphere.service.MsHashTreeService;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -81,6 +82,14 @@ public class ElementUtil {
     private static final String ASSERTIONS = ElementConstants.ASSERTIONS;
     private static final String BODY_FILE_DIR = FileUtils.BODY_FILE_DIR;
     private static final String TEST_BEAN_GUI = "TestBeanGUI";
+    public final static List<String> scriptList = new ArrayList<String>() {{
+        this.add(ElementConstants.JSR223);
+        this.add(ElementConstants.JSR223_PRE);
+        this.add(ElementConstants.JSR223_POST);
+    }};
+    public static final String JSR = "jsr223";
+
+
 
 
     public static Map<String, EnvironmentConfig> getEnvironmentConfig(String environmentId, String projectId) {
@@ -1099,4 +1108,59 @@ public class ElementUtil {
         }
         return false;
     }
+
+    public static List<String> scriptList(String request) {
+        List<String> list = new ArrayList<>();
+        if (StringUtils.isBlank(request)) {
+            return list;
+        }
+        JSONObject element = JSONUtil.parseObject(request);
+        toList(element.getJSONArray(ElementConstants.HASH_TREE), scriptList, list);
+        return list;
+    }
+
+    private static void toList(JSONArray hashTree, List<String> scriptList, List<String> list) {
+        for (int i = 0; i < hashTree.length(); i++) {
+            JSONObject element = hashTree.optJSONObject(i);
+            if (element == null) {
+                continue;
+            }
+            if (scriptList.contains(element.optString(ElementConstants.TYPE))) {
+                JSONObject elementTarget = JSONUtil.parseObject(element.toString());
+                if (elementTarget.has(ElementConstants.HASH_TREE)) {
+                    elementTarget.remove(ElementConstants.HASH_TREE);
+                }
+                elementTarget.remove(MsHashTreeService.ACTIVE);
+                elementTarget.remove(MsHashTreeService.INDEX);
+                list.add(elementTarget.toString());
+            }
+            JSONArray jsrArray = element.optJSONArray(JSR);
+            if (jsrArray != null) {
+                for (int j = 0; j < jsrArray.length(); j++) {
+                    JSONObject jsr223 = jsrArray.optJSONObject(j);
+                    if (jsr223 != null) {
+                        list.add(jsr223.toString());
+                    }
+                }
+            }
+            if (element.has(ElementConstants.HASH_TREE)) {
+                JSONArray elementJSONArray = element.optJSONArray(ElementConstants.HASH_TREE);
+                toList(elementJSONArray, scriptList, list);
+            }
+        }
+    }
+
+    public static boolean isSend(List<String> org, List<String> target) {
+        if (org.size() != target.size() && target.size() > 0) {
+            return true;
+        }
+        List<String> diff = org.stream()
+                .filter(s -> !target.contains(s))
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(diff)) {
+            return true;
+        }
+        return false;
+    }
+
 }

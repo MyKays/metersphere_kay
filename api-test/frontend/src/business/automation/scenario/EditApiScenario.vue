@@ -1119,7 +1119,15 @@ export default {
       if (!node.data.code) {
         node.data.code = 'SUCCESS';
       }
-      if (!status) {
+      if (node.data.code ==='SUCCESS' && status && status === 'SUCCESS') {
+        node.data.code = 'SUCCESS';
+      }
+      if ((node.data.code ==='SUCCESS' ||
+        node.data.code === 'FAKE_ERROR') &&
+        status && status === 'FAKE_ERROR') {
+        node.data.code = 'FAKE_ERROR';
+      }
+      if (status && status === 'ERROR') {
         node.data.code = 'ERROR';
       }
       node.data.testing = false;
@@ -1194,7 +1202,7 @@ export default {
               item.data.requestResult = [data];
             }
             // 更新父节点状态
-            this.resultEvaluation(data.resourceId, data.success);
+            this.resultEvaluation(data.resourceId, data.status);
             item.data.testing = false;
             item.data.debug = true;
           }
@@ -1253,8 +1261,15 @@ export default {
         } else {
           this.reqError += 1;
         }
+        this.runningEvaluation(e.data);
+
+        let hasRequest = this.runScenario && this.runScenario.hasRequest;
+        if (hasRequest && data && this.runScenario.hashTree) {
+          this.runScenario.hashTree[0].requestResult = [];
+          this.runScenario.hashTree[0].testing = false;
+          this.runScenario.hashTree[0].requestResult.push(data);
+        }
       }
-      this.runningEvaluation(e.data);
       this.message = getUUID();
       if (e.data && e.data.indexOf('MS_TEST_END') !== -1) {
         this.runScenario = undefined;
@@ -1737,8 +1752,11 @@ export default {
         this.$error('场景包含插件步骤，对应场景已经删除不能调试！');
         return;
       }
-      this.clearResult(this.scenarioDefinition);
-      this.clearNodeStatus(this.$refs.stepTree.root.childNodes);
+      let hasRequest = runScenario && runScenario.hasRequest;
+      if (!hasRequest) {
+        this.clearResult(this.scenarioDefinition);
+        this.clearNodeStatus(this.$refs.stepTree.root.childNodes);
+      }
       this.saved = runScenario && runScenario.stepScenario ? false : true;
       /*触发执行操作*/
       this.$refs.currentScenario.validate(async (valid) => {
@@ -1880,8 +1898,8 @@ export default {
                 }
               }
               this.isPreventReClick = true;
-              if (this.currentScenario.scenarioDefinitionOrg){
-               delete this.currentScenario['scenarioDefinitionOrg'];
+              if (this.currentScenario.scenarioDefinitionOrg) {
+                delete this.currentScenario['scenarioDefinitionOrg'];
               }
               this.currentScenario.name = this.currentScenario.name.trim();
               await saveScenario(this.path, this.currentScenario, this.scenarioDefinition, this, (response) => {
@@ -2018,7 +2036,7 @@ export default {
                 }
                 this.dataProcessing(obj.hashTree);
                 this.scenarioDefinition = obj.hashTree;
-                this.$nextTick(()=>{
+                this.$nextTick(() => {
                   let data = this.scenarioDefinition;
                   if (data.hashTree) {
                     this.sort(data.hashTree);
@@ -2027,7 +2045,7 @@ export default {
                     this.margeDomain(this.scenarioDefinition, domainMap);
                     this.cancelBatchProcessing();
                   }
-                })
+                });
               }
             }
             if (this.currentScenario.copy) {
@@ -2165,9 +2183,14 @@ export default {
       this.debugLoading = false;
       this.debugVisible = false;
       this.loading = false;
-      this.runScenario = undefined;
       this.message = 'stop';
       this.debugData = {};
+      let hasRequest = this.runScenario && this.runScenario.hasRequest;
+      if (hasRequest  && this.runScenario.hashTree) {
+        this.runScenario.hashTree[0].requestResult = [];
+        this.runScenario.hashTree[0].testing = false;
+      }
+      this.runScenario = undefined;
     },
     showScenarioParameters() {
       this.$refs.scenarioParameters.open(this.currentScenario.variables, this.currentScenario.headers);

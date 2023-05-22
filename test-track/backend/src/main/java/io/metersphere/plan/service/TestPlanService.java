@@ -159,7 +159,9 @@ public class TestPlanService {
     @Resource
     @Lazy
     private TestPlanService testPlanService;
-
+    @Resource
+    private BaseTestResourcePoolService baseTestResourcePoolService;
+    
     public TestPlan addTestPlan(AddTestPlanRequest testPlan) {
         if (getTestPlanByName(testPlan.getName()).size() > 0) {
             MSException.throwException(Translator.get("plan_name_already_exists"));
@@ -408,7 +410,6 @@ public class TestPlanService {
         if (serviceIdSet.contains(MicroServiceName.UI_TEST)) {
             calcExecResultStatus(testPlan.getId(), testPlan, planTestPlanUiScenarioCaseService::getExecResultByPlanId);
         }
-
         testPlan.setPassRate(MathUtils.getPercentWithDecimal(testPlan.getTested() == 0 ? 0 : testPlan.getPassed() * 1.0 / testPlan.getTotal()));
         testPlan.setTestRate(MathUtils.getPercentWithDecimal(testPlan.getTotal() == 0 ? 0 : testPlan.getTested() * 1.0 / testPlan.getTotal()));
     }
@@ -937,8 +938,16 @@ public class TestPlanService {
     }
 
     public void verifyPool(String projectId, RunModeConfigDTO runConfig) {
-        // 检查是否禁用了本地执行
-        apiPoolDebugService.verifyPool(projectId, runConfig);
+        if (StringUtils.isNotBlank(runConfig.getResourcePoolId())) {
+            //检查保存的资源池的合法性
+            TestResourcePool testResourcePool = baseTestResourcePoolService.getResourcePool(runConfig.getResourcePoolId());
+            if (!StringUtils.equalsIgnoreCase(testResourcePool.getStatus(), "VALID")) {
+                MSException.throwException("保存的资源池无法使用，请重新选择资源池");
+            }
+        } else {
+            // 检查是否禁用了本地执行
+            apiPoolDebugService.verifyPool(projectId, runConfig);
+        }
     }
 
     /**
@@ -1860,11 +1869,6 @@ public class TestPlanService {
         RunModeConfigDTO runModeConfig = getRunModeConfigDTO(testplanRunRequest, envType, envMap, environmentGroupId, testPlanId);
         runModeConfig.setTestPlanDefaultEnvMap(testplanRunRequest.getTestPlanDefaultEnvMap());
 
-        if (!testplanRunRequest.isRunWithinResourcePool()) {
-            //未勾选资源池运行时，将资源池ID赋空
-            runModeConfig.setResourcePoolId(null);
-        }
-
         //执行测试计划行为，要更新TestPlan状态为进行中，并重置实际结束时间
         this.updateTestPlanExecuteInfo(testPlanId, TestPlanStatus.Underway.name());
 
@@ -2175,6 +2179,7 @@ public class TestPlanService {
                 }
                 runRequest.setTestPlanId(planExecutionQueue.getTestPlanId());
                 runRequest.setReportId(planExecutionQueue.getReportId());
+                runRequest.setTriggerMode(request.getTriggerMode());
                 runPlan(runRequest);
             } else {
                 for (TestPlanExecutionQueue planExecutionQueue : planExecutionQueues) {
@@ -2183,6 +2188,7 @@ public class TestPlanService {
                     TestPlanRequestUtil.changeStringToBoolean(jsonObject);
                     TestPlanRunRequest runRequest = JSON.parseObject(JSON.toJSONString(jsonObject), TestPlanRunRequest.class);
                     runRequest.setReportId(planExecutionQueue.getReportId());
+                    runRequest.setTriggerMode(request.getTriggerMode());
                     runPlan(runRequest);
                 }
             }

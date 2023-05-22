@@ -4,7 +4,7 @@
     || (node.type && this.stepFilter.get('AllSamplerProxy').indexOf(node.type) === -1)">
       <el-card class="ms-card">
         <el-row>
-          <el-col span="23">
+          <el-col :span="22">
             <div class="el-step__icon is-text ms-api-col">
               <div class="el-step__icon-inner">
                 {{ node.index }}
@@ -17,8 +17,10 @@
               <span v-else>{{ getLabel(node.label) }}</span>
             </el-tooltip>
           </el-col>
-          <el-col :span="1">
-            <ms-api-report-status :status="node.totalStatus"/>
+          <el-col :span="2">
+            <div style="float: right">
+              <ms-api-report-status :status="node.totalStatus" v-if="node.type !=='ConstantTimer'|| node.type !=='Assertion'"/>
+            </div>
           </el-col>
         </el-row>
       </el-card>
@@ -45,6 +47,7 @@
         :total-status="node.totalStatus"
         :console="console"
         :isActive="isActive"
+        :is-template="isTemplate"
         :is-share="isShare"
         :share-id="shareId"
         v-on:requestResult="requestResult"
@@ -85,12 +88,16 @@ export default {
   methods: {
     getLabel(label) {
       switch (label) {
-        case "ConstantTimer":
-          return "等待控制器";
-        case "LoopController":
-          return "循环控制器";
-        case "Assertion":
-          return "场景断言";
+        case 'ConstantTimer':
+          return this.$t('api_test.automation.wait_controller');
+        case 'LoopController':
+          return this.$t('api_test.automation.loop_controller');
+        case 'Assertion':
+          return this.$t('api_test.definition.request.scenario_assertions');
+        case 'IfController':
+          return this.$t('api_test.automation.if_controller');
+        case 'TransactionController':
+          return this.$t('api_test.automation.transaction_controller');
         default:
           return label;
       }

@@ -26,6 +26,7 @@ import io.metersphere.excel.handler.IssueTemplateHeadWriteHandler;
 import io.metersphere.excel.listener.IssueExcelListener;
 import io.metersphere.excel.utils.EasyExcelExporter;
 import io.metersphere.i18n.Translator;
+import io.metersphere.log.annotation.MsAuditLog;
 import io.metersphere.log.utils.ReflexObjectUtil;
 import io.metersphere.log.vo.DetailColumn;
 import io.metersphere.log.vo.OperatingLogDetails;
@@ -65,6 +66,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -91,6 +93,9 @@ import java.util.stream.Collectors;
 @Transactional(rollbackFor = Exception.class)
 public class IssuesService {
 
+    @Resource
+    @Lazy
+    private IssuesService issuesService;
     @Resource
     private BaseIntegrationService baseIntegrationService;
     @Resource
@@ -347,11 +352,11 @@ public class IssuesService {
         if (!org.springframework.util.CollectionUtils.isEmpty(addCaseIds)) {
             if (issuesRequest.getIsPlanEdit()) {
                 addCaseIds.forEach(caseId -> {
-                    testCaseIssueService.add(issuesId, caseId, issuesRequest.getRefId(), IssueRefType.PLAN_FUNCTIONAL.name());
+                    issuesService.insertIssueRelateLog(issuesId, caseId, issuesRequest.getRefId(), IssueRefType.PLAN_FUNCTIONAL.name());
                     testCaseIssueService.updateIssuesCount(caseId);
                 });
             } else {
-                addCaseIds.forEach(caseId -> testCaseIssueService.add(issuesId, caseId, null, IssueRefType.FUNCTIONAL.name()));
+                addCaseIds.forEach(caseId -> issuesService.insertIssueRelateLog(issuesId, caseId, null, IssueRefType.FUNCTIONAL.name()));
             }
         }
     }
@@ -745,6 +750,30 @@ public class IssuesService {
             fields.add(customFieldDao);
         });
         data.setFields(fields);
+    }
+
+    private String getCustomStatus(List<CustomFieldItemDTO> fields) {
+        List<CustomFieldItemDTO> customFields = fields.stream().filter(field -> StringUtils.equals(field.getName(), SystemCustomField.ISSUE_STATUS))
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(customFields)) {
+            return null;
+        }
+        return customFields.get(0).getValue().toString();
+    }
+
+    private void buildCustomFieldStr(IssuesWithBLOBs issues, List<CustomFieldItemDTO> fields) {
+        if (CollectionUtils.isEmpty(fields)) {
+            return;
+        }
+        List<Map<String, Object>> custemFieldMaps = new ArrayList<>();
+        fields.stream().filter(field -> ObjectUtils.isNotEmpty(field.getValue())
+                && !StringUtils.equalsAnyIgnoreCase(field.getValue().toString(), StringUtils.EMPTY, "[]")).forEach(field -> {
+            Map<String, Object> custemFieldMap = new HashMap<>();
+            custemFieldMap.put("name", field.getName());
+            custemFieldMap.put("value", field.getValue());
+            custemFieldMaps.add(custemFieldMap);
+        });
+        issues.setCustomFields(JSON.toJSONString(custemFieldMaps));
     }
 
     private void buildCustomField(List<IssuesDao> data, Boolean isThirdTemplate, List<CustomFieldDao> customFields) {
@@ -1234,6 +1263,7 @@ public class IssuesService {
     public String getLogDetails(String id) {
         IssuesWithBLOBs issuesWithBLOBs = issuesMapper.selectByPrimaryKey(id);
         if (issuesWithBLOBs != null) {
+            issuesWithBLOBs.setStatus(StringUtils.equals(issuesWithBLOBs.getPlatform(), IssuesManagePlatform.Local.name()) ? issuesWithBLOBs.getStatus() : issuesWithBLOBs.getPlatformStatus());
             List<DetailColumn> columns = ReflexObjectUtil.getColumns(issuesWithBLOBs, TestPlanReference.issuesColumns);
             OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(issuesWithBLOBs.getId()), issuesWithBLOBs.getProjectId(), issuesWithBLOBs.getTitle(), issuesWithBLOBs.getCreator(), columns);
             return JSON.toJSONString(details);
@@ -1242,10 +1272,18 @@ public class IssuesService {
     }
 
     public String getLogDetails(IssuesUpdateRequest issuesRequest) {
-        if (issuesRequest != null) {
-            issuesRequest.setCreator(SessionUtils.getUserId());
-            List<DetailColumn> columns = ReflexObjectUtil.getColumns(issuesRequest, TestPlanReference.issuesColumns);
-            OperatingLogDetails details = new OperatingLogDetails(null, issuesRequest.getProjectId(), issuesRequest.getTitle(), issuesRequest.getCreator(), columns);
+        IssuesWithBLOBs issuesWithBLOBs = issuesMapper.selectByPrimaryKey(issuesRequest.getId());
+        if (issuesWithBLOBs != null) {
+            if (!StringUtils.equals(issuesWithBLOBs.getPlatform(), IssuesManagePlatform.Local.name())) {
+                issuesWithBLOBs.setStatus(issuesWithBLOBs.getPlatformStatus());
+            }
+            String customStatus = getCustomStatus(issuesRequest.getRequestFields());
+            if (customStatus != null) {
+                issuesWithBLOBs.setStatus(customStatus);
+            }
+            buildCustomFieldStr(issuesWithBLOBs, issuesRequest.getRequestFields());
+            List<DetailColumn> columns = ReflexObjectUtil.getColumns(issuesWithBLOBs, TestPlanReference.issuesColumns);
+            OperatingLogDetails details = new OperatingLogDetails(null, issuesWithBLOBs.getProjectId(), issuesWithBLOBs.getTitle(), issuesWithBLOBs.getCreator(), columns);
             return JSON.toJSONString(details);
         }
         return null;
@@ -1898,32 +1936,7 @@ public class IssuesService {
         } else {
             issueIds = Collections.EMPTY_LIST;
         }
-
-        Map<String, String> statusMap = customFieldIssuesService.getIssueStatusMap(issueIds, request.getProjectId());
-        if (MapUtils.isEmpty(statusMap) && CollectionUtils.isNotEmpty(issueIds)) {
-            // 未找到自定义字段状态, 则获取平台状态
-            IssuesRequest issuesRequest = new IssuesRequest();
-            issuesRequest.setProjectId(SessionUtils.getCurrentProjectId());
-            issuesRequest.setFilterIds(issueIds);
-            List<IssuesDao> issues = extIssuesMapper.getIssues(issuesRequest);
-            statusMap = issues.stream().collect(Collectors.toMap(IssuesDao::getId, i -> Optional.ofNullable(i.getPlatformStatus()).orElse("new")));
-        }
-
-        if (MapUtils.isEmpty(statusMap)) {
-            request.setFilterIds(issueIds);
-        } else {
-            if (request.getThisWeekUnClosedTestPlanIssue() || request.getUnClosedTestPlanIssue()) {
-                CustomField customField = baseCustomFieldService.getCustomFieldByName(SessionUtils.getCurrentProjectId(), SystemCustomField.ISSUE_STATUS);
-                JSONArray statusArray = JSONArray.parseArray(customField.getOptions());
-                Map<String, String> tmpStatusMap = statusMap;
-                List<String> unClosedIds = issueIds.stream()
-                        .filter(id -> !StringUtils.equals(tmpStatusMap.getOrDefault(id, StringUtils.EMPTY).replaceAll("\"", StringUtils.EMPTY), "closed"))
-                        .collect(Collectors.toList());
-                request.setFilterIds(unClosedIds);
-            } else {
-                request.setFilterIds(issueIds);
-            }
-        }
+        request.setFilterIds(issueIds);
     }
 
     public boolean thirdPartTemplateEnable(String projectId) {
@@ -1977,5 +1990,10 @@ public class IssuesService {
             tapdUsers = tapdPlatform.getTapdUsers(issuesWithBLOBs.getProjectId(), issuesWithBLOBs.getPlatformId());
         }
         return tapdUsers;
+    }
+
+    @MsAuditLog(module = OperLogModule.TRACK_TEST_CASE, type = OperLogConstants.ASSOCIATE_ISSUE, content = "#msClass.getIssueLogDetails(#caseId, #refId, #issuesId)", msClass = TestCaseIssueService.class)
+    public void insertIssueRelateLog(String issuesId, String caseId, String refId, String refType) {
+        testCaseIssueService.add(issuesId, caseId, refId, refType);
     }
 }

@@ -68,16 +68,8 @@
               haveOtherExecCase
             "
           >
-            <el-checkbox
-              v-model="runConfig.runWithinResourcePool"
-              style="padding-right: 10px"
-              class="radio-change"
-              :disabled="true"
-            >
-              {{ $t("run_mode.run_with_resource_pool") }} </el-checkbox
-            ><br />
+            <span>{{ $t("run_mode.run_with_resource_pool") }}: </span>
             <el-select
-              :disabled="!runConfig.runWithinResourcePool"
               v-model="runConfig.resourcePoolId"
               size="mini"
               style="width: 100%; margin-top: 8px"
@@ -100,16 +92,8 @@
               haveOtherExecCase
             "
           >
-            <el-checkbox
-              v-model="runConfig.runWithinResourcePool"
-              style="padding-right: 10px"
-              class="radio-change"
-              :disabled="true"
-            >
-              {{ $t("run_mode.run_with_resource_pool") }} </el-checkbox
-            ><br />
+            <span>{{ $t("run_mode.run_with_resource_pool") }}: </span>
             <el-select
-              :disabled="!runConfig.runWithinResourcePool"
               v-model="runConfig.resourcePoolId"
               size="mini"
               style="width: 100%; margin-top: 8px"
@@ -203,26 +187,18 @@
 
 <script>
 import MsDialogFooter from "metersphere-frontend/src/components/MsDialogFooter";
-import { strMapToObj } from "metersphere-frontend/src/utils";
+import {strMapToObj} from "metersphere-frontend/src/utils";
 import MsTag from "metersphere-frontend/src/components/MsTag";
-import { ENV_TYPE } from "metersphere-frontend/src/utils/constants";
-import {
-  getCurrentProjectID,
-  getOwnerProjects,
-} from "@/business/utils/sdk-utils";
-import { getQuotaValidResourcePools } from "@/api/remote/resource-pool";
+import {ENV_TYPE} from "metersphere-frontend/src/utils/constants";
+import {getCurrentProjectID, getOwnerProjects,} from "@/business/utils/sdk-utils";
+import {getQuotaValidResourcePools} from "@/api/remote/resource-pool";
 import EnvGroupPopover from "@/business/plan/env/EnvGroupPopover";
-import { getApiCaseEnv } from "@/api/remote/plan/test-plan-api-case";
-import {
-  getApiScenarioEnv,
-  getPlanCaseEnv,
-  getPlanCaseProjectIds,
-} from "@/api/remote/plan/test-plan";
+import {getApiCaseEnv} from "@/api/remote/plan/test-plan-api-case";
+import {getApiScenarioEnv, getPlanCaseEnv, getPlanCaseProjectIds,} from "@/api/remote/plan/test-plan";
 import EnvGroupWithOption from "../env/EnvGroupWithOption";
 import EnvironmentGroup from "@/business/plan/env/EnvironmentGroupList";
 import EnvSelectPopover from "@/business/plan/env/EnvSelectPopover";
-import { getSystemBaseSetting } from "metersphere-frontend/src/api/system";
-import { getProjectConfig } from "@/api/project";
+import {getProjectConfig} from "@/api/project";
 
 export default {
   name: "MsTestPlanRunModeWithEnv",
@@ -254,7 +230,6 @@ export default {
         mode: "serial",
         reportType: "iddReport",
         onSampleError: false,
-        runWithinResourcePool: false,
         resourcePoolId: null,
         envMap: new Map(),
         environmentGroupId: "",
@@ -319,9 +294,6 @@ export default {
         this.runConfig.onSampleError =
           this.runConfig.onSampleError === "true" ||
           this.runConfig.onSampleError === true;
-        this.runConfig.runWithinResourcePool =
-          this.runConfig.runWithinResourcePool === "true" ||
-          this.runConfig.runWithinResourcePool === true;
       }
       this.runModeVisible = true;
       this.testType = testType;
@@ -331,12 +303,20 @@ export default {
     },
     getProjectApplication() {
       getProjectConfig(getCurrentProjectID(), "").then((res) => {
-        if (res.data && res.data.poolEnable && res.data.resourcePoolId) {
-          this.resourcePools.forEach(item => {
-            if (item.id === res.data.resourcePoolId) {
-              this.runConfig.resourcePoolId = res.data.resourcePoolId;
-            }
-          });
+        let hasPool = false;
+        this.resourcePools.forEach((item) => {
+          if (item.id === this.runConfig.resourcePoolId) {
+            hasPool = true;
+          }
+        });
+        if (!hasPool) {
+          if (res.data && res.data.poolEnable && res.data.resourcePoolId) {
+            this.runConfig.resourcePoolId = res.data.resourcePoolId;
+            hasPool = true;
+          }
+        }
+        if (!hasPool) {
+          this.runConfig.resourcePoolId = null;
         }
       });
     },
@@ -348,7 +328,6 @@ export default {
         mode: "serial",
         reportType: "iddReport",
         onSampleError: false,
-        runWithinResourcePool: false,
         resourcePoolId: null,
         envMap: new Map(),
         environmentGroupId: "",
@@ -359,6 +338,11 @@ export default {
       this.$emit("close");
     },
     handleRunBatch() {
+      if (this.runConfig.resourcePoolId == null) {
+        this.$warning(
+          this.$t("workspace.env_group.please_select_run_within_resource_pool"));
+        return;
+      }
       this.runConfig.testPlanDefaultEnvMap = this.defaultEnvMap;
       this.$emit("handleRunBatch", this.runConfig);
       this.close();
@@ -366,7 +350,6 @@ export default {
     getResourcePools() {
       getQuotaValidResourcePools().then((response) => {
         this.resourcePools = response.data;
-        this.runConfig.runWithinResourcePool = true;
         this.getProjectApplication();
       });
     },
@@ -445,7 +428,6 @@ export default {
     },
     handleCommand(command) {
       if (
-        this.runConfig.runWithinResourcePool &&
         this.runConfig.resourcePoolId == null &&
         this.haveOtherExecCase
       ) {
