@@ -46,7 +46,7 @@
 
           <!-- Install all project dependencies -->
           <execution>
-            <id>npm install</id>
+            <id>cnpm install</id>
             <goals>
               <goal>npm</goal>
             </goals>
