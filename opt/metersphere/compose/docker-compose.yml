@@ -1,4 +1,25 @@
 version: "2.1"
+
+volumes:
+  ms-conf:
+    driver_opts:
+      type: none
+      device: /opt/metersphere/conf
+      o: bind
+  ms-logs:
+    driver_opts:
+      type: none
+      device: /opt/metersphere/logs
+      o: bind
+  ms-data:
+    driver_opts:
+      type: none
+      device: /opt/metersphere/data
+      o: bind
+
+networks:
+  ms-network:
+    external: true
 services:
   eureka:
     image: e2fc6cd97a17
@@ -6,7 +27,7 @@ services:
 #    ports:
 #      - '8761:8761' # 默认不开启
     environment:
-      REDIS_HOST: 192.168.1.11
+      REDIS_HOST: MS-Redis
       REDIS_PORT: 6379
       REDIS_PASSWORD:
     healthcheck:
