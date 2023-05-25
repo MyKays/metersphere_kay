@@ -1,0 +1,4 @@
+singleServerConfig:
+  password: 
+  address: "redis://MS-Redis:6379"
+  database: 0

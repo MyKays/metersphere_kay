@@ -1,0 +1,32 @@
+version: '2.1'
+services:
+  minio:
+    image: ${MS_IMAGE_PREFIX}/minio:RELEASE.2023-04-13T03-08-07Z
+    container_name: minio
+    hostname: "minio"
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9001" ]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    environment:
+      MINIO_ACCESS_KEY: ${MS_MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MS_MINIO_SECRET_KEY}
+    volumes:
+      - ms-minio-data:/data
+    networks:
+      - ms-network
+    command: server --console-address ':9001' /data
+    privileged: true
+    restart: always
+    mem_limit: ${MS_MINIO_MEM_LIMIT:-1073741824} # default 1g bytes
+
+volumes:
+  ms-minio-data:
+    driver_opts:
+      type: none
+      device: ${MS_BASE}/metersphere/data/minio
+      o: bind

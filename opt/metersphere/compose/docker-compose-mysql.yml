@@ -1,0 +1,33 @@
+version: "2.1"
+services:
+  mysql:
+    image: ${MS_IMAGE_PREFIX}/mysql:8.0.33
+    container_name: mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MS_MYSQL_PASSWORD}"]
+      interval: 6s
+      timeout: 5s
+      retries: 50
+    environment:
+      MYSQL_DATABASE: ${MS_MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${MS_MYSQL_PASSWORD}
+    ports:
+      - 3307:3306
+    volumes:
+      - ${MS_BASE}/metersphere/conf/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ${MS_BASE}/metersphere/bin/mysql:/docker-entrypoint-initdb.d/
+      - ms-mysql-data:/var/lib/mysql
+    networks:
+      - ms-network
+    restart: always
+  system-setting:
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  ms-mysql-data:
+    driver_opts:
+      type: none
+      device: ${MS_BASE}/metersphere/data/mysql
+      o: bind
