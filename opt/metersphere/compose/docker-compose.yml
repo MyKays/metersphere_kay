@@ -16,20 +16,26 @@ volumes:
       type: none
       device: /opt/metersphere/data
       o: bind
-
+  ms-prometheus-data:
+    driver_opts:
+      type: none
+      device: /opt/metersphere/data/prometheus
+      o: bind
+  ms-prometheus-conf:
+    driver_opts:
+      type: none
+      device: /opt/metersphere/conf/prometheus
+      o: bind
 networks:
   ms-network:
     external: true
+
 services:
   eureka:
     image: e2fc6cd97a17
     container_name: eureka210
-#    ports:
-#      - '8761:8761' # 默认不开启
-    environment:
-      REDIS_HOST: MS-Redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD:
+    ports:
+      - '8761:8761' # 默认不开启
     healthcheck:
       test: [ "CMD", "nc", "-zv", "localhost", "8761" ]
       interval: 6s
@@ -43,3 +49,260 @@ services:
     mem_limit: ${MS_EUREKA_MEM_LIMIT:-536870912} # default 512m bytes
     networks:
       - ms-network
+
+  gateway:
+    image: a2a77efe3676
+    container_name: gateway
+    ports:
+      - '8000:8000'
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8000"]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_GATEWAY_MEM_LIMIT:-858993459} # default 800m bytes
+    networks:
+      - ms-network
+
+  system-setting:
+    image: 8f4ef0de93b3
+    container_name: setting210
+    ports:
+      - '8001:8000'
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8001"]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_SYSTEM_MEM_LIMIT:-858993459} # default 800m bytes
+    networks:
+      - ms-network
+
+  api-test:
+    image: 286b8f742a28
+    container_name: api210
+    ports:
+      - '8004:8000'
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8004"]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_API_MEM_LIMIT:-1073741824} # default 1g bytes
+    networks:
+      - ms-network
+    depends_on:
+      system-setting:
+        condition: service_healthy
+
+  workstation:
+    image: d0771a538e0c
+    container_name: workstation210
+    ports:
+      - '8007:8000'
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8007"]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_WORKSTATION_MEM_LIMIT:-858993459} # default 800m bytes
+    networks:
+      - ms-network
+    depends_on:
+      system-setting:
+        condition: service_healthy
+
+  performance-test:
+    image: b1a038df7484
+    container_name: performance210
+    ports:
+      - '8003:8000'
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8003"]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_PERFORMANCE_MEM_LIMIT:-858993459} # default 800m bytes
+    networks:
+      - ms-network
+    depends_on:
+      system-setting:
+        condition: service_healthy
+
+  project-management:
+    image: 8c95d6e8435f
+    container_name: project210
+    ports:
+      - '8002:8000'
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8002"]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_PROJECT_MEM_LIMIT:-858993459} # default 800m bytes
+    networks:
+      - ms-network
+    depends_on:
+      system-setting:
+        condition: service_healthy
+
+  test-track:
+    image: 0423d2e57071
+    container_name: track210
+    ports:
+      - '8005:8000'
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8005"]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_TRACK_MEM_LIMIT:-1073741824} # default 1g bytes
+    networks:
+      - ms-network
+    depends_on:
+      system-setting:
+        condition: service_healthy
+
+  report-stat:
+    image: bb52b4d32b30
+    container_name: report210
+    ports:
+      - '8006:8000'
+    healthcheck:
+      test: [ "CMD", "nc", "-zv", "localhost", "8006" ]
+      interval: 6s
+      timeout: 10s
+      retries: 50
+    restart: always
+    volumes:
+      - ms-conf:/opt/metersphere/conf
+      - ms-logs:/opt/metersphere/logs
+      - ms-data:/opt/metersphere/data
+    mem_limit: ${MS_REPORT_MEM_LIMIT:-858993459} # default 800m bytes
+    networks:
+      - ms-network
+    depends_on:
+      system-setting:
+        condition: service_healthy
+
+#  data-streaming:
+#    image: ${MS_IMAGE_PREFIX}/data-streaming:${MS_IMAGE_TAG}
+#    container_name: ms-data-streaming
+#    healthcheck:
+#      test: ["CMD", "nc", "-zv", "localhost", "8084"]
+#      interval: 6s
+#      timeout: 10s
+#      retries: 50
+#    restart: always
+#    volumes:
+#      - ./conf/metersphere.properties:/opt/metersphere/conf/metersphere.properties
+#      - ${MS_BASE}/metersphere/logs/data-streaming:/opt/metersphere/logs/data-streaming
+#    mem_limit: ${MS_DS_MEM_LIMIT:-1073741824} # default 1g bytes
+#    networks:
+#      - ms-network
+
+#  prometheus:
+#    image: ${MS_IMAGE_PREFIX}/prometheus:v2.42.0
+#    container_name: ms-prometheus
+#    volumes:
+#      - ms-prometheus-conf:/etc/prometheus/
+#      - ms-prometheus-data:/prometheus
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#      - '--storage.tsdb.path=/prometheus'
+#      - '--web.console.libraries=/etc/prometheus/console_libraries'
+#      - '--web.console.templates=/etc/prometheus/consoles'
+#      - '--storage.tsdb.retention=200h'
+#    restart: always
+#    ports:
+#      - '9090:9090'
+#    healthcheck:
+#      test: [ "CMD", "nc", "-zv", "localhost", "9090" ]
+#      interval: 6s
+#      timeout: 5s
+#      retries: 50
+#    networks:
+#      - ms-network
+#
+#  node-controller:
+#    image: ${MS_IMAGE_PREFIX}/node-controller:${MS_IMAGE_TAG}
+#    container_name: ms-node-controller
+#    environment:
+#      FORMAT_MESSAGES_PATTERN_DISABLE_LOOKUPS: 'true'
+#
+#    ports:
+#      - '8082:8082'
+#      - '9100:9100'
+#    healthcheck:
+#      test: ["CMD", "nc", "-zv", "localhost", "8082"]
+#      interval: 6s
+#      timeout: 5s
+#      retries: 50
+#    volumes:
+#      - ms-data:/opt/metersphere/data
+#      - ms-logs:/opt/metersphere/logs
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    mem_limit: ${MS_NC_MEM_LIMIT:-1073741824} # default 1g bytes
+#    restart: always
+#    networks:
+#      - ms-network
+#
+#  nodeexporter:
+#    image: ${MS_IMAGE_PREFIX}/node-exporter:v1.5.0
+#    container_name: nodeexporter
+#    user: root
+#    privileged: true
+#    volumes:
+#      - /proc:/host/proc:ro
+#      - /sys:/host/sys:ro
+#      - /:/rootfs:ro
+#    command:
+#      - '--path.procfs=/host/proc'
+#      - '--path.sysfs=/host/sys'
+#      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+#    restart: always
+#    mem_limit: 128m
+#    ports:
+#      - '9100:9100'
+#    healthcheck:
+#      test: ["CMD", "nc", "-zv", "localhost", "9100"]
+#      interval: 6s
+#      timeout: 5s
+#      retries: 50
+#    network_mode: service:node-controller
+
