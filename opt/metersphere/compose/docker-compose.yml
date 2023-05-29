@@ -68,6 +68,9 @@ services:
     mem_limit: ${MS_GATEWAY_MEM_LIMIT:-858993459} # default 800m bytes
     networks:
       - ms-network
+    depends_on:
+      eureka:
+        condition: service_healthy
 
   system-setting:
     image: 8f4ef0de93b3
@@ -87,6 +90,9 @@ services:
     mem_limit: ${MS_SYSTEM_MEM_LIMIT:-858993459} # default 800m bytes
     networks:
       - ms-network
+    depends_on:
+      eureka:
+        condition: service_healthy
 
   api-test:
     image: 286b8f742a28
