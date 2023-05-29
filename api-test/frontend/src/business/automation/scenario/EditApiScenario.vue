@@ -1278,6 +1278,9 @@ export default {
         this.stopDebug = 'stop';
         this.messageWebSocket.close();
         this.reload();
+        if (this.$refs.maximizeScenario) {
+          this.$refs.maximizeScenario.reload();
+        }
       }
     },
     handleCommand() {
@@ -1800,6 +1803,11 @@ export default {
           this.initMessageSocket();
         } else {
           this.debugLoading = false;
+          let hasRequest = runScenario && runScenario.hasRequest;
+          if (hasRequest  && runScenario.hashTree) {
+            runScenario.hashTree[0].requestResult = [];
+            runScenario.hashTree[0].testing = false;
+          }
         }
       });
     },

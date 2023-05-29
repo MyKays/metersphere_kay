@@ -813,7 +813,7 @@ public class TestCaseService {
         ServiceUtils.buildCombineTagsToSupportMultiple(request);
         List<TestCaseDTO> list = extTestCaseMapper.list(request);
         if (!isSampleInfo) {
-            buildUserInfo(list);
+            buildUserInfoByCurrentProjectMembers(list);
             if (StringUtils.isNotBlank(request.getProjectId())) {
                 buildProjectInfo(request.getProjectId(), list);
             } else {
@@ -1788,6 +1788,7 @@ public class TestCaseService {
         if (filters != null && !filters.containsKey("status")) {
             filters.put("status", new ArrayList<>(0));
         }
+        ServiceUtils.buildCombineTagsToSupportMultiple(param.getCondition());
         ServiceUtils.getSelectAllIds(param, param.getCondition(),
                 (query) -> extTestCaseMapper.selectIds(query));
         return param;
@@ -3044,6 +3045,17 @@ public class TestCaseService {
         Project project = baseProjectService.getProjectById(projectId);
         list.forEach(item -> {
             item.setProjectName(project.getName());
+        });
+    }
+
+    public void buildUserInfoByCurrentProjectMembers(List<TestCaseDTO> testCases) {
+        Map<String, String> userMap = baseUserService.getProjectMemberOption(SessionUtils.getCurrentProjectId())
+                .stream()
+                .collect(Collectors.toMap(User::getId, User::getName));
+        testCases.forEach(caseResult -> {
+            caseResult.setCreateName(userMap.get(caseResult.getCreateUser()));
+            caseResult.setDeleteUserId(userMap.get(caseResult.getDeleteUserId()));
+            caseResult.setMaintainerName(userMap.get(caseResult.getMaintainer()));
         });
     }
 
