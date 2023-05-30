@@ -32,8 +32,8 @@ networks:
 
 services:
   eureka:
-    image: e2fc6cd97a17
-    container_name: eureka210
+    image: eureka:2.10
+    container_name: eureka
     ports:
       - '8761:8761' # 默认不开启
     healthcheck:
@@ -51,7 +51,7 @@ services:
       - ms-network
 
   gateway:
-    image: a2a77efe3676
+    image: gateway:2.10
     container_name: gateway
     ports:
       - '8000:8000'
@@ -73,8 +73,8 @@ services:
         condition: service_healthy
 
   system-setting:
-    image: 8f4ef0de93b3
-    container_name: setting210
+    image: setting:2.10
+    container_name: setting
     ports:
       - '8001:8000'
     healthcheck:
@@ -95,8 +95,8 @@ services:
         condition: service_healthy
 
   api-test:
-    image: 286b8f742a28
-    container_name: api210
+    image: api-test:2.10
+    container_name: api-test
     ports:
       - '8004:8000'
     healthcheck:
@@ -117,8 +117,8 @@ services:
         condition: service_healthy
 
   workstation:
-    image: d0771a538e0c
-    container_name: workstation210
+    image: workstation:2.10
+    container_name: workstation
     ports:
       - '8007:8000'
     healthcheck:
@@ -139,8 +139,8 @@ services:
         condition: service_healthy
 
   performance-test:
-    image: b1a038df7484
-    container_name: performance210
+    image: performance:2.10
+    container_name: performance
     ports:
       - '8003:8000'
     healthcheck:
@@ -161,8 +161,8 @@ services:
         condition: service_healthy
 
   project-management:
-    image: 8c95d6e8435f
-    container_name: project210
+    image: project:2.10
+    container_name: project
     ports:
       - '8002:8000'
     healthcheck:
@@ -183,8 +183,8 @@ services:
         condition: service_healthy
 
   test-track:
-    image: 0423d2e57071
-    container_name: track210
+    image: track:2.10
+    container_name: track
     ports:
       - '8005:8000'
     healthcheck:
@@ -205,8 +205,8 @@ services:
         condition: service_healthy
 
   report-stat:
-    image: bb52b4d32b30
-    container_name: report210
+    image: report:2.10
+    container_name: report
     ports:
       - '8006:8000'
     healthcheck:
