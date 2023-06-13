@@ -801,16 +801,20 @@ public class ApiScenarioService {
 
     public ParameterConfig getConfig(ApiScenarioDTO scenario) {
         try {
+            ParameterConfig config = new ParameterConfig();
             Map<String, String> environmentMap = new HashMap<>();
             String environmentType = scenario.getEnvironmentType();
             String environmentGroupId = scenario.getEnvironmentGroupId();
             String environmentJson = scenario.getEnvironmentJson();
-            if (StringUtils.equals(environmentType, EnvironmentType.GROUP.name())) {
+            if (StringUtils.equals(environmentType, EnvironmentType.GROUP.name())
+                    && StringUtils.isNotEmpty(environmentGroupId)) {
                 environmentMap = environmentGroupProjectService.getEnvMap(environmentGroupId);
-            } else if (StringUtils.equals(environmentType, EnvironmentType.JSON.name())) {
+            } else if (StringUtils.equals(environmentType, EnvironmentType.JSON.name())
+                    && StringUtils.isNotEmpty(environmentJson)) {
                 environmentMap = JSON.parseObject(environmentJson, Map.class);
+            } else {
+                return config;
             }
-            ParameterConfig config = new ParameterConfig();
             apiScenarioEnvService.setEnvConfig(environmentMap, config);
             return config;
         } catch (Exception e) {
@@ -2111,7 +2115,8 @@ public class ApiScenarioService {
         return follows.stream().map(ApiScenarioFollow::getFollowId).distinct().collect(Collectors.toList());
     }
 
-    public ScenarioEnv getApiScenarioEnv(String definition) {
+    public ScenarioEnv getApiScenarioEnv(byte[] request) {
+        String definition = new String(request, StandardCharsets.UTF_8);
         return apiScenarioEnvService.getApiScenarioEnv(definition);
     }
 
@@ -2161,7 +2166,7 @@ public class ApiScenarioService {
         List<String> strings = new LinkedList<>();
         apiScenarios.forEach(item -> {
             if (StringUtils.isNotEmpty(item.getScenarioDefinition())) {
-                ScenarioEnv env = getApiScenarioEnv(item.getScenarioDefinition());
+                ScenarioEnv env = apiScenarioEnvService.getApiScenarioEnv(item.getScenarioDefinition());
                 if (!strings.contains(item.getProjectId())) {
                     strings.add(item.getProjectId());
                 }

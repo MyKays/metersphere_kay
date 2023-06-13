@@ -156,6 +156,8 @@
                     'PROJECT_API_SCENARIO:READ+EDIT',
                     'PROJECT_API_SCENARIO:READ+CREATE',
                     'PROJECT_API_SCENARIO:READ+COPY',
+                    'PROJECT_API_SCENARIO:READ+DEBUG',
+                    'PROJECT_API_SCENARIO:READ+RUN'
                   ]">
                   {{ $t('api_test.request.debug') }}
                   <el-dropdown-menu slot="dropdown">
@@ -584,7 +586,6 @@ import { getDefaultVersion, setLatestVersionById } from 'metersphere-frontend/sr
 
 const store = useApiStore();
 
-let jsonPath = require('jsonpath');
 export default {
   name: 'EditApiScenario',
   props: {
@@ -1963,11 +1964,13 @@ export default {
     },
     getEnv(definition) {
       return new Promise((resolve) => {
-        getApiScenarioEnv({ definition: definition }).then((res) => {
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(definition, 'utf-8');
+        getApiScenarioEnv(bytes ).then((res) => {
           if (res.data) {
             this.projectIds = new Set(res.data.projectIds);
             this.projectIds.add(this.projectId);
-            this.isFullUrl = res.data.fullUrl;
+            this.isFullUrl = res.data.data.fullUrl;
           }
           resolve();
         });

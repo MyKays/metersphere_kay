@@ -60,7 +60,7 @@
       <!--  显示数量    -->
       <table-select-count-bar :count="selectCounts" style="float: left; margin: 5px" />
 
-      <el-button size="mini" icon="el-icon-refresh" @click="refresh" />
+      <el-button size="mini" icon="el-icon-refresh" @click="refreshData" />
       <el-button type="primary" @click="copy" :loading="buttonIsWorking" @keydown.enter.native.prevent size="mini">
         {{ $t('commons.copy') }}
       </el-button>
@@ -241,6 +241,10 @@ export default {
       } else {
         this.$refs.apiCaseList.initTable(this.projectId);
       }
+    },
+    refreshData() {
+      this.$refs.nodeTree.refresh(this.projectId);
+      this.refresh();
     },
     setProject(projectId) {
       this.projectId = projectId;
