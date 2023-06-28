@@ -46,7 +46,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_EUREKA_MEM_LIMIT:-536870912} # default 512m bytes
+    mem_limit: 512m # default 512m bytes
     networks:
       - ms-network
 
@@ -65,7 +65,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_GATEWAY_MEM_LIMIT:-858993459} # default 800m bytes
+    mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
     depends_on:
@@ -87,7 +87,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_SYSTEM_MEM_LIMIT:-858993459} # default 800m bytes
+    mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
     depends_on:
@@ -109,7 +109,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_API_MEM_LIMIT:-1073741824} # default 1g bytes
+    mem_limit: 1G # default 1g bytes
     networks:
       - ms-network
     depends_on:
@@ -131,7 +131,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_WORKSTATION_MEM_LIMIT:-858993459} # default 800m bytes
+    mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
     depends_on:
@@ -153,7 +153,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_PERFORMANCE_MEM_LIMIT:-858993459} # default 800m bytes
+    mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
     depends_on:
@@ -175,7 +175,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_PROJECT_MEM_LIMIT:-858993459} # default 800m bytes
+    mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
     depends_on:
@@ -197,7 +197,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_TRACK_MEM_LIMIT:-1073741824} # default 1g bytes
+    mem_limit: 1G # default 1g bytes
     networks:
       - ms-network
     depends_on:
@@ -219,7 +219,7 @@ services:
       - ms-conf:/opt/metersphere/conf
       - ms-logs:/opt/metersphere/logs
       - ms-data:/opt/metersphere/data
-    mem_limit: ${MS_REPORT_MEM_LIMIT:-858993459} # default 800m bytes
+    mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
     depends_on:
