@@ -4,17 +4,17 @@ volumes:
   ms-conf:
     driver_opts:
       type: none
-      device: /opt/metersphere/conf
+      device: /eyimu3/metersphere/conf
       o: bind
   ms-logs:
     driver_opts:
       type: none
-      device: /opt/metersphere/logs
+      device: /eyimu3/metersphere/logs
       o: bind
   ms-data:
     driver_opts:
       type: none
-      device: /opt/metersphere/data
+      device: /eyimu3/metersphere/data
       o: bind
 
 networks:

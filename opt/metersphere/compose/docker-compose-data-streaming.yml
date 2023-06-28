@@ -25,8 +25,8 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ./conf/metersphere.properties:/opt/metersphere/conf/metersphere.properties
-      - ${MS_BASE}/metersphere/logs/data-streaming:/opt/metersphere/logs/data-streaming
+      - ./conf/metersphere.properties:/eyimu3/metersphere/conf/metersphere.properties
+      - ${MS_BASE}/metersphere/logs/data-streaming:/eyimu3/metersphere/logs/data-streaming
     mem_limit: ${MS_DS_MEM_LIMIT:-1073741824} # default 1g bytes
     networks:
       - ms-network

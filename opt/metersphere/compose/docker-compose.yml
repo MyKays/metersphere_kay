@@ -4,27 +4,27 @@ volumes:
   ms-conf:
     driver_opts:
       type: none
-      device: /opt/metersphere/conf
+      device: /eyimu3/metersphere/conf
       o: bind
   ms-logs:
     driver_opts:
       type: none
-      device: /opt/metersphere/logs
+      device: /eyimu3/metersphere/logs
       o: bind
   ms-data:
     driver_opts:
       type: none
-      device: /opt/metersphere/data
+      device: /eyimu3/metersphere/data
       o: bind
   ms-prometheus-data:
     driver_opts:
       type: none
-      device: /opt/metersphere/data/prometheus
+      device: /eyimu3/metersphere/data/prometheus
       o: bind
   ms-prometheus-conf:
     driver_opts:
       type: none
-      device: /opt/metersphere/conf/prometheus
+      device: /eyimu3/metersphere/conf/prometheus
       o: bind
 networks:
   ms-network:
@@ -43,9 +43,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 512m # default 512m bytes
     networks:
       - ms-network
@@ -62,9 +62,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
@@ -84,9 +84,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
@@ -106,9 +106,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 1g bytes
     networks:
       - ms-network
@@ -128,9 +128,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
@@ -150,9 +150,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
@@ -172,9 +172,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
@@ -194,9 +194,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 1g bytes
     networks:
       - ms-network
@@ -216,9 +216,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: 1G # default 800m bytes
     networks:
       - ms-network
@@ -236,8 +236,8 @@ services:
 #      retries: 50
 #    restart: always
 #    volumes:
-#      - ./conf/metersphere.properties:/opt/metersphere/conf/metersphere.properties
-#      - ${MS_BASE}/metersphere/logs/data-streaming:/opt/metersphere/logs/data-streaming
+#      - ./conf/metersphere.properties:/eyimu3/metersphere/conf/metersphere.properties
+#      - ${MS_BASE}/metersphere/logs/data-streaming:/eyimu3/metersphere/logs/data-streaming
 #    mem_limit: ${MS_DS_MEM_LIMIT:-1073741824} # default 1g bytes
 #    networks:
 #      - ms-network
@@ -280,8 +280,8 @@ services:
 #      timeout: 5s
 #      retries: 50
 #    volumes:
-#      - ms-data:/opt/metersphere/data
-#      - ms-logs:/opt/metersphere/logs
+#      - ms-data:/eyimu3/metersphere/data
+#      - ms-logs:/eyimu3/metersphere/logs
 #      - /var/run/docker.sock:/var/run/docker.sock
 #    mem_limit: ${MS_NC_MEM_LIMIT:-1073741824} # default 1g bytes
 #    restart: always

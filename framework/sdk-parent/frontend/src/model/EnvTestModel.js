@@ -47,7 +47,7 @@ export const uuid = function () {
   });
 };
 
-export const BODY_FILE_DIR = "/opt/metersphere/data/body"; //存放body文件上传目录
+export const BODY_FILE_DIR = "/eyimu3/metersphere/data/body"; //存放body文件上传目录
 
 export const calculate = function (itemValue) {
   if (!itemValue) {

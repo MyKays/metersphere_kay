@@ -32,9 +32,9 @@ services:
       retries: 50
     restart: always
     volumes:
-      - ms-conf:/opt/metersphere/conf
-      - ms-logs:/opt/metersphere/logs
-      - ms-data:/opt/metersphere/data
+      - ms-conf:/eyimu3/metersphere/conf
+      - ms-logs:/eyimu3/metersphere/logs
+      - ms-data:/eyimu3/metersphere/data
     mem_limit: ${MS_SYSTEM_MEM_LIMIT:-858993459} # default 800m bytes
     networks:
       - ms-network
