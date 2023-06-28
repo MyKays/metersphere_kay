@@ -16,9 +16,9 @@ COPY backend/src/main/resources/public /app/public
 COPY backend/src/main/resources/static /app/static
 
 RUN mv /app/lib/ms-jmeter-core-*.jar /app/lib/ms-jmeter-core.jar
-RUN mv /app/jmeter /opt/
+RUN mv /app/jmeter /eyimu3/metersphere//
 
-ENV JAVA_CLASSPATH=/app:/app/lib/ms-jmeter-core.jar:/opt/jmeter/lib/ext/*:/app/lib/*
+ENV JAVA_CLASSPATH=/app:/app/lib/ms-jmeter-core.jar:/eyimu3/jmeter/lib/ext/*:/app/lib/*
 ENV JAVA_MAIN_CLASS=io.metersphere.ApiApplication
 ENV MS_VERSION=${MS_VERSION}
 ENV JAVA_OPTIONS="-Dfile.encoding=utf-8 -Djava.awt.headless=true --add-opens java.base/jdk.internal.loader=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED"

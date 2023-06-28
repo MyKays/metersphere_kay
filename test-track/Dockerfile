@@ -2,7 +2,7 @@ FROM test.docker.yimucloud.com:5000/metersphere/alpine-openjdk17-jre
 
 LABEL maintainer="MC <haominchao@eyimu.com>"
 
-ARG MS_VERSION=2.10.1
+ARG MS_VERSION=2.10.2
 ARG DEPENDENCY=backend/target/dependency
 
 COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
@@ -19,7 +19,7 @@ COPY backend/src/main/resources/static /app/static
 RUN mv /app/lib/ms-jmeter-core-*.jar /app/lib/ms-jmeter-core.jar
 
 
-ENV JAVA_CLASSPATH=/app:/app/lib/ms-jmeter-core.jar:/opt/jmeter/lib/ext/*:/app/lib/*
+ENV JAVA_CLASSPATH=/app:/app/lib/ms-jmeter-core.jar:/eyimu3/jmeter/lib/ext/*:/app/lib/*
 ENV JAVA_MAIN_CLASS=io.metersphere.TrackApplication
 ENV MS_VERSION=${MS_VERSION}
 ENV JAVA_OPTIONS="-Dfile.encoding=utf-8 -Djava.awt.headless=true --add-opens java.base/jdk.internal.loader=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED"

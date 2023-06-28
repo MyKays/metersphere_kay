@@ -2,7 +2,7 @@ FROM test.docker.yimucloud.com:5000/metersphere/alpine-openjdk17-jre
 
 LABEL maintainer="MC <haominchao@eyimu.com>"
 
-ARG MS_VERSION=2.10.1
+ARG MS_VERSION=2.10.2
 ARG DEPENDENCY=target/dependency
 
 COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
