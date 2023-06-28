@@ -105,6 +105,10 @@ export function parseCustomField(data, template, rules, oldFields) {
       }
     }
 
+    if (item.type === 'int' && item.defaultValue === null) {
+      // el-input-number 需要设置成 undefined，默认值才能设置为空
+      item.defaultValue = undefined;
+    }
     customFieldForm[item.name] = item.defaultValue;
   });
 
@@ -210,6 +214,10 @@ export function parseCustomFieldForId(data, template, rules, oldFields) {
       }
     }
 
+    if (item.type === 'int' && item.defaultValue === null) {
+      // el-input-number 需要设置成 undefined，默认值才能设置为空
+      item.defaultValue = undefined;
+    }
     customFieldForm[item.id] = item.defaultValue;
   });
 
@@ -270,9 +278,7 @@ export function buildCustomFields(data, param, template) {
       if (["richText", "textarea"].indexOf(item.type) > -1) {
         customField["textValue"] = item.defaultValue;
       } else {
-        customField["value"] = item.defaultValue
-          ? JSON.stringify(item.defaultValue)
-          : "";
+        customField["value"] = JSON.stringify(item.defaultValue);
         // 处理 jira 的 sprint 字段
         if (item.optionLabel) {
           customField["textValue"] = item.optionLabel;
@@ -285,8 +291,7 @@ export function buildCustomFields(data, param, template) {
       }
       let fieldValue =
         item.defaultValue instanceof Array && item.type !== "multipleInput"
-          ? JSON.stringify(item.defaultValue)
-          : item.defaultValue || "";
+          ? JSON.stringify(item.defaultValue) : item.defaultValue;
       let requestField = {
         id: item.id,
         name: item.name,

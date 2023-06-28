@@ -6,7 +6,7 @@
         <api-json-path-suggest-button
           :open-tip="$t('api_test.request.assertions.json_path_suggest')"
           :clear-tip="$t('api_test.request.assertions.json_path_clear')"
-          :isReadOnly="isReadOnly"
+          :is-read-only="request.caseEnable"
           @open="suggestJsonOpen"
           @clear="clearJson" />
       </span>
@@ -15,9 +15,9 @@
       <el-row :gutter="10">
         <el-col :span="4">
           <el-select
-            :disabled="isReadOnly"
             class="assertion-item"
             v-model="type"
+            :disabled="request.caseEnable"
             :placeholder="$t('api_test.request.assertions.select_type')"
             size="small">
             <el-option :label="$t('api_test.request.assertions.text')" :value="options.TEXT" />
@@ -249,7 +249,12 @@ export default {
       this.assertions.jsonPath.push(jsonItem);
     },
     clearJson() {
-      this.assertions.jsonPath = [];
+      if (this.assertions.jsonPath) {
+        const tmpArr = this.assertions.jsonPath.filter((item) =>
+          !item.label
+        );
+        this.assertions.jsonPath = tmpArr;
+      }
     },
   },
 };

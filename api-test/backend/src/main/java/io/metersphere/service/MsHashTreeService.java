@@ -19,15 +19,18 @@ import io.metersphere.commons.utils.JSON;
 import io.metersphere.commons.utils.JSONUtil;
 import io.metersphere.commons.utils.LogUtil;
 import io.metersphere.dto.ProjectConfig;
+import io.metersphere.plugin.core.MsTestElement;
 import io.metersphere.service.definition.ApiDefinitionService;
 import io.metersphere.service.definition.ApiTestCaseService;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +100,17 @@ public class MsHashTreeService {
     private static final String DATASOURCEID = "dataSourceId";
     private static final String RESULT_VARIABLE = "resultVariable";
     private static final String ENV_Id = "environmentId";
+    private static final String PARENT_INDEX = "parentIndex";
+
+
+    private final static String JSON_PATH = "jsonPath";
+    private final static String JSR223 = "jsr223";
+    private final static String XPATH = "xpath2";
+    private final static String REGEX = "regex";
+    private final static String DURATION = "duration";
+    private final static String DOCUMENT = "document";
+    private final static String LABEL = "label";
+    private final static String SCENARIO_REF = "SCENARIO-REF-STEP";
 
     public void setHashTree(JSONArray hashTree) {
         // 将引用转成复制
@@ -191,7 +205,7 @@ public class MsHashTreeService {
 
                         List<JSONObject> pre = ElementUtil.mergeHashTree(groupMap.get(PRE), targetGroupMap.get(PRE));
                         List<JSONObject> post = ElementUtil.mergeHashTree(groupMap.get(POST), targetGroupMap.get(POST));
-                        List<JSONObject> rules = ElementUtil.mergeHashTree(groupMap.get(ASSERTIONS), targetGroupMap.get(ASSERTIONS));
+                        List<JSONObject> rules = mergeAssertions(groupMap.get(ASSERTIONS), targetGroupMap.get(ASSERTIONS));
                         List<JSONObject> step = new LinkedList<>();
                         if (CollectionUtils.isNotEmpty(pre)) {
                             step.addAll(pre);
@@ -232,6 +246,68 @@ public class MsHashTreeService {
         return element;
     }
 
+    public List<JSONObject> mergeAssertions(List<JSONObject> sourceHashTree, List<JSONObject> targetHashTree) {
+        try {
+            if (CollectionUtils.isNotEmpty(targetHashTree)) {
+                JSONObject target = targetHashTree.get(0);
+
+                if (CollectionUtils.isNotEmpty(sourceHashTree)) {
+                    JSONObject source = sourceHashTree.get(0);
+                    //jsonPath
+                    JSONArray jsonPathTar = target.optJSONArray(JSON_PATH);
+                    JSONArray jsonPathSource = source.optJSONArray(JSON_PATH);
+                    mergeArray(target, jsonPathTar, jsonPathSource, JSON_PATH);
+                    //jsr223
+                    JSONArray jsr223Tar = target.optJSONArray(JSR223);
+                    JSONArray jsr223Source = source.optJSONArray(JSR223);
+                    mergeArray(target, jsr223Tar, jsr223Source, JSR223);
+                    //xpath
+                    JSONArray xpathTar = target.optJSONArray(XPATH);
+                    JSONArray xpathSource = source.optJSONArray(XPATH);
+                    mergeArray(target, xpathTar, xpathSource, XPATH);
+                    //regex
+                    JSONArray regexTar = target.optJSONArray(REGEX);
+                    JSONArray regexSource = source.optJSONArray(REGEX);
+                    mergeArray(target, regexTar, regexSource, REGEX);
+                    //duration
+                    JSONObject durationTar = target.optJSONObject(DURATION);
+                    JSONObject durationSource = source.optJSONObject(DURATION);
+                    mergeObject(target, durationTar, durationSource, DURATION);
+                    //document
+                    JSONObject documentTar = target.optJSONObject(DOCUMENT);
+                    JSONObject documentSource = source.optJSONObject(DOCUMENT);
+                    mergeObject(target, documentTar, documentSource, DOCUMENT);
+                    sourceHashTree.remove(0);
+                    sourceHashTree.add(target);
+                }
+            }
+        } catch (Exception e) {
+            LogUtil.error("mergeAssertions error", e);
+        }
+        return sourceHashTree;
+    }
+
+    private static void mergeObject(JSONObject target, JSONObject durationTar, JSONObject durationSource, String type) {
+        if (durationSource != null && durationSource.has(LABEL) &&
+                StringUtils.equals(durationSource.optString(LABEL), SCENARIO_REF)) {
+            durationTar = durationSource;
+        }
+        target.remove(type);
+        target.put(type, durationTar);
+    }
+
+    private static void mergeArray(JSONObject target, JSONArray jsonArray, JSONArray source, String type) {
+        if (!source.isEmpty()) {
+            source.forEach(obj -> {
+                JSONObject jsonObject = (JSONObject) obj;
+                if (StringUtils.equals(jsonObject.optString(LABEL), SCENARIO_REF)) {
+                    jsonArray.put(jsonObject);
+                }
+            });
+        }
+        target.remove(type);
+        target.put(type, jsonArray);
+    }
 
     private void getCaseIds(JSONObject element, List<String> caseIds) {
         if (StringUtils.equalsIgnoreCase(element.optString(REF_TYPE), CASE) && element.has(ID)) {
@@ -239,7 +315,7 @@ public class MsHashTreeService {
         }
     }
 
-    private JSONObject setRefScenario(JSONObject element) {
+    private JSONObject setRefScenario(JSONObject element, Map<String, Boolean> keyMap) {
         boolean enable = element.has(ENABLE) ? element.optBoolean(ENABLE) : true;
         if (!element.has(MIX_ENABLE)) {
             element.put(MIX_ENABLE, false);
@@ -256,7 +332,21 @@ public class MsHashTreeService {
                 element.put(ENV_MAP, JSON.parseObject(scenarioWithBLOBs.getEnvironmentJson(), Map.class));
             }
             if (StringUtils.equalsIgnoreCase(element.optString(REFERENCED), REF)) {
-                element = setRefEnable(element, JSONUtil.parseObject(scenarioWithBLOBs.getScenarioDefinition()));
+                JSONObject object = JSONUtil.parseObject(scenarioWithBLOBs.getScenarioDefinition());
+                object.put(PARENT_INDEX, element.optString(PARENT_INDEX));
+                object.put(INDEX, element.optString(INDEX));
+                if (object.has(ENABLE) && BooleanUtils.isFalse(object.optBoolean(ENABLE))) {
+                    enable = false;
+                    object.put(REF_ENABLE, true);
+                } else {
+                    String indexStr = object.has(PARENT_INDEX) && StringUtils.isNotBlank(object.optString(PARENT_INDEX)) ?
+                            StringUtils.join(object.optString(PARENT_INDEX), "_", object.optString(INDEX)) : object.optString(INDEX);
+                    if (keyMap.containsKey(element.optString(ID) + indexStr)) {
+                        enable = keyMap.get(element.optString(ID) + indexStr);
+                        object.put(ENABLE, enable);
+                    }
+                }
+                element = object;
                 element.put(REFERENCED, REF);
                 element.put(NAME, scenarioWithBLOBs.getName());
             }
@@ -278,74 +368,90 @@ public class MsHashTreeService {
             if (StringUtils.equalsIgnoreCase(element.optString(REFERENCED), REF)) {
                 element.put(ENABLE, false);
             }
+            if (element.has(ENABLE) && BooleanUtils.isFalse(element.optBoolean(ENABLE))) {
+                element.put(REF_ENABLE, true);
+            } else {
+                String indexStr = element.has(PARENT_INDEX) && StringUtils.isNotBlank(element.optString(PARENT_INDEX)) ?
+                        StringUtils.join(element.optString(PARENT_INDEX), "_", element.optString(INDEX)) : element.optString(INDEX);
+                if (keyMap.containsKey(element.optString(ID) + indexStr)) {
+                    enable = keyMap.get(element.optString(ID) + indexStr);
+                    element.put(ENABLE, enable);
+                }
+            }
             element.put(NUM, StringUtils.EMPTY);
         }
         return element;
     }
 
-    public static JSONObject setRefEnable(JSONObject targetElement, JSONObject orgElement) {
-        if (orgElement == null || targetElement == null) {
-            return orgElement;
+    public static Map<String, Boolean> getIndexKeyMap(JSONObject element, String parentIndex) {
+        Map<String, Boolean> indexKeyMap = new HashMap<>();
+        StringBuilder builder = new StringBuilder(parentIndex);
+        if (element.has(ENABLE) && element.has(ID) && element.has(INDEX)) {
+            builder.append("_").append(element.optString(INDEX));
+            String key = StringUtils.join(element.optString(ID), builder.toString());
+            indexKeyMap.put(key, element.optBoolean(ENABLE));
         }
-        if (!orgElement.optBoolean(ENABLE)) {
-            orgElement.put(ENABLE, false);
-            orgElement.put(REF_ENABLE, true);
-        } else {
-            orgElement.put(ENABLE, targetElement.optBoolean(ENABLE));
+        if (element.has(HASH_TREE)) {
+            element.getJSONArray(HASH_TREE).forEach(item -> {
+                JSONObject obj = (JSONObject) item;
+                indexKeyMap.putAll(getIndexKeyMap(obj, builder.toString()));
+            });
         }
-        if (targetElement.optBoolean(REF_ENABLE)) {
-            orgElement.put(REF_ENABLE, targetElement.optBoolean(REF_ENABLE));
-        }
-        try {
-            if (orgElement.has(HASH_TREE)) {
-                JSONArray org = orgElement.optJSONArray(HASH_TREE);
-                JSONArray target = targetElement.optJSONArray(HASH_TREE);
-                if (org != null && target != null) {
-                    org.forEach(obj -> {
-                        JSONObject childOrg = (JSONObject) obj;
-                        target.forEach(targetObj -> {
-                            JSONObject childTarget = (JSONObject) targetObj;
-                            if (StringUtils.equals(childOrg.optString(ID), childTarget.optString(ID))
-                                    && StringUtils.equals(childOrg.optString(INDEX), childTarget.optString(INDEX))) {
-                                setRefEnable(childTarget, childOrg);
-                            }
-                        });
-                    });
-                }
-            }
-        } catch (Exception e) {
-            LogUtil.error(e, e.getMessage());
-            return orgElement;
-        }
-        return orgElement;
+        return indexKeyMap;
     }
 
-    public void dataFormatting(JSONArray hashTree, List<String> caseIds) {
+    public void dataFormatting(JSONArray hashTree, List<String> caseIds, Map<String, Boolean> keyMap, String parentIndex) {
         for (int i = 0; i < hashTree.length(); i++) {
             JSONObject element = hashTree.optJSONObject(i);
+            // 设置父级索引
+            element.put(PARENT_INDEX, parentIndex);
+
             if (element != null && StringUtils.equalsIgnoreCase(element.optString(TYPE), SCENARIO)) {
-                element = this.setRefScenario(element);
+                element = this.setRefScenario(element, keyMap);
                 hashTree.put(i, element);
             } else if (element != null && ElementConstants.REQUESTS.contains(element.optString(TYPE))) {
+                setCaseEnable(element, keyMap, parentIndex);
                 this.getCaseIds(element, caseIds);
                 hashTree.put(i, element);
             }
             if (element.has(HASH_TREE)) {
                 JSONArray elementJSONArray = element.optJSONArray(HASH_TREE);
-                dataFormatting(elementJSONArray, caseIds);
+                String indexStr = StringUtils.join(parentIndex, "_", element.optString(INDEX));
+                dataFormatting(elementJSONArray, caseIds, keyMap, indexStr);
             }
         }
     }
 
-    public void dataFormatting(JSONObject element, List<String> caseIds) {
-        if (element != null && StringUtils.equalsIgnoreCase(element.optString(TYPE), SCENARIO)) {
-            element = this.setRefScenario(element);
-        } else if (element != null && ElementConstants.REQUESTS.contains(element.optString(TYPE))) {
+    public void dataFormatting(JSONObject element, List<String> caseIds, Map<String, Boolean> keyMap) {
+        if (element == null) {
+            return;
+        }
+        // 设置父级索引
+        String parentIndex = element.has(PARENT_INDEX) ?
+                StringUtils.join(element.optString(PARENT_INDEX), "_", element.optString(INDEX))
+                : element.optString(INDEX);
+
+        element.put(PARENT_INDEX, parentIndex);
+        if (StringUtils.equalsIgnoreCase(element.optString(TYPE), SCENARIO)) {
+            element = this.setRefScenario(element, keyMap);
+        } else if (ElementConstants.REQUESTS.contains(element.optString(TYPE))) {
+            setCaseEnable(element, keyMap, parentIndex);
             this.getCaseIds(element, caseIds);
         }
-        if (element != null && element.has(HASH_TREE)) {
+        if (element.has(HASH_TREE)) {
             JSONArray elementJSONArray = element.optJSONArray(HASH_TREE);
-            dataFormatting(elementJSONArray, caseIds);
+            dataFormatting(elementJSONArray, caseIds, keyMap, parentIndex);
+        }
+    }
+
+    private void setCaseEnable(JSONObject element, Map<String, Boolean> keyMap, String parentIndex) {
+        if (element.has(ENABLE) && BooleanUtils.isFalse(element.optBoolean(ENABLE))) {
+            element.put(ENABLE, false);
+        } else {
+            String indexStr = StringUtils.join(element.optString(ID), parentIndex, "_", element.optString(INDEX));
+            if (keyMap.containsKey(indexStr)) {
+                element.put(ENABLE, keyMap.get(indexStr));
+            }
         }
     }
 
@@ -376,4 +482,19 @@ public class MsHashTreeService {
         }
     }
 
+    public static Map<String, Boolean> getIndexKeyMap(MsTestElement element, String parentIndex) {
+        Map<String, Boolean> indexKeyMap = new HashMap<>();
+        StringBuilder builder = new StringBuilder(parentIndex);
+        if (StringUtils.isNotBlank(element.getId()) && StringUtils.isNotBlank(element.getIndex())) {
+            builder.append("_").append(element.getIndex());
+            String key = StringUtils.join(element.getId(), builder.toString());
+            indexKeyMap.put(key, element.isEnable());
+        }
+        if (CollectionUtils.isNotEmpty(element.getHashTree())) {
+            element.getHashTree().forEach(item -> {
+                indexKeyMap.putAll(getIndexKeyMap(item, builder.toString()));
+            });
+        }
+        return indexKeyMap;
+    }
 }

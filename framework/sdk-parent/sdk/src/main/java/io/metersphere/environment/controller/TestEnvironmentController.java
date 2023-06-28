@@ -6,6 +6,7 @@ import io.metersphere.base.domain.ApiTestEnvironmentWithBLOBs;
 import io.metersphere.base.domain.EnvironmentGroup;
 import io.metersphere.commons.constants.OperLogConstants;
 import io.metersphere.commons.constants.OperLogModule;
+import io.metersphere.commons.constants.PermissionConstants;
 import io.metersphere.commons.exception.MSException;
 import io.metersphere.commons.utils.*;
 import io.metersphere.environment.dto.*;
@@ -18,6 +19,7 @@ import io.metersphere.i18n.Translator;
 import io.metersphere.log.annotation.MsAuditLog;
 import io.metersphere.request.EnvironmentRequest;
 import jakarta.annotation.Resource;
+import org.apache.shiro.authz.annotation.Logical;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,7 +41,6 @@ public class TestEnvironmentController {
     private BaseEnvGroupProjectService baseEnvGroupProjectService;
 
     @GetMapping("/list/{projectId}")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ")
     public List<ApiTestEnvironmentWithBLOBs> list(@PathVariable String projectId) {
         return baseEnvironmentService.list(projectId);
     }
@@ -53,27 +54,24 @@ public class TestEnvironmentController {
      * @return
      */
     @PostMapping("/list/{goPage}/{pageSize}")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ")
     public Pager<List<ApiTestEnvironmentWithBLOBs>> listByCondition(@PathVariable int goPage, @PathVariable int pageSize, @RequestBody EnvironmentRequest environmentRequest) {
         Page<Object> page = PageHelper.startPage(goPage, pageSize, true);
         return PageUtils.setPageInfo(page, baseEnvironmentService.listByConditions(environmentRequest));
     }
 
     @GetMapping("/get/{id}")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ")
     public ApiTestEnvironmentWithBLOBs get(@PathVariable String id) {
         return baseEnvironmentService.get(id);
     }
 
 
     @PostMapping(value = "/get/entry")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ")
     public List<KeyStoreEntry> getEntry(@RequestPart("request") String password, @RequestPart(value = "file") MultipartFile sslFiles) {
         return commandService.get(password, sslFiles);
     }
 
     @PostMapping("/add")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ+CREATE")
+    @RequiresPermissions(value = {PermissionConstants.PROJECT_ENVIRONMENT_READ_CREATE, PermissionConstants.PROJECT_ENVIRONMENT_READ_COPY, PermissionConstants.WORKSPACE_PROJECT_ENVIRONMENT_READ_CREATE, PermissionConstants.WORKSPACE_PROJECT_ENVIRONMENT_READ_COPY}, logical = Logical.OR)
     @MsAuditLog(module = OperLogModule.PROJECT_ENVIRONMENT_SETTING, type = OperLogConstants.CREATE, title = "#apiTestEnvironmentWithBLOBs.name", project = "#apiTestEnvironmentWithBLOBs.projectId", msClass = BaseEnvironmentService.class)
     public String create(@RequestPart("request") TestEnvironmentDTO apiTestEnvironmentWithBLOBs, @RequestPart(value = "files", required = false) List<MultipartFile> sslFiles, @RequestPart(value = "variablesFiles", required = false) List<MultipartFile> variableFile) {
         checkParams(apiTestEnvironmentWithBLOBs);
@@ -81,7 +79,7 @@ public class TestEnvironmentController {
     }
 
     @PostMapping("/import")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ+IMPORT")
+    @RequiresPermissions(value = {PermissionConstants.PROJECT_ENVIRONMENT_READ_IMPORT, PermissionConstants.WORKSPACE_PROJECT_ENVIRONMENT_READ_IMPORT}, logical = Logical.OR)
     public String create(@RequestBody List<TestEnvironmentDTO> environments) {
         environments.forEach(this::checkParams);
         return baseEnvironmentService.importEnvironment(environments);
@@ -131,13 +129,11 @@ public class TestEnvironmentController {
 
 
     @GetMapping("/group/map/{groupId}")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ")
     public Map<String, String> getEnvMap(@PathVariable String groupId) {
         return baseEnvGroupProjectService.getEnvMap(groupId);
     }
 
     @GetMapping("/module/list/{projectId}/{protocol}")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ")
     public List<ApiModuleDTO> getNodeByProjectId(@PathVariable String projectId, @PathVariable String protocol) {
         return baseEnvironmentService.getNodeTreeByProjectId(projectId, protocol);
     }
@@ -148,7 +144,6 @@ public class TestEnvironmentController {
     }
 
     @PostMapping("/database/validate")
-    @RequiresPermissions("PROJECT_ENVIRONMENT:READ")
     public void validate(@RequestBody DatabaseConfig databaseConfig) {
         try {
             DriverManager.getConnection(databaseConfig.getDbUrl(), databaseConfig.getUsername(), databaseConfig.getPassword());

@@ -65,23 +65,23 @@
       <div
         v-if="!ifFromVariableAdvance"
         class="header-right"
-        @click.stop
-        v-permission="[
-          'PROJECT_API_SCENARIO:READ+EDIT',
-          'PROJECT_API_SCENARIO:READ+CREATE',
-          'PROJECT_API_SCENARIO:READ+COPY',
-        ]">
+        @click.stop>
         <slot name="message" v-show="!isMax"></slot>
         <slot name="debugStepCode"></slot>
 
         <slot name="button" v-if="showVersion"></slot>
 
-        <el-tooltip :content="$t('test_resource_pool.enable_disable')" placement="top" v-if="showBtn">
+        <el-tooltip :content="$t('test_resource_pool.enable_disable')" placement="top" v-if="showBtn"
+                    v-permission="[
+          'PROJECT_API_SCENARIO:READ+EDIT',
+          'PROJECT_API_SCENARIO:READ+CREATE',
+          'PROJECT_API_SCENARIO:READ+COPY',
+        ]">
           <el-switch
             v-model="data.enable"
             class="enable-switch"
             size="mini"
-            :disabled="data.refEnable || !showVersion || isDeleted" />
+            :disabled="data.refEnable || !showVersion || isDeleted || isEnabled()" />
         </el-tooltip>
 
         <el-button
@@ -91,6 +91,11 @@
           circle
           @click="copyRow"
           style="padding: 5px"
+          v-permission="[
+          'PROJECT_API_SCENARIO:READ+EDIT',
+          'PROJECT_API_SCENARIO:READ+CREATE',
+          'PROJECT_API_SCENARIO:READ+COPY',
+        ]"
           :disabled="(data.disabled && !data.root && !data.isCopy) || !showVersion || isDeleted" />
 
         <el-button
@@ -101,7 +106,12 @@
           style="padding: 5px"
           circle
           @click="remove"
-          :disabled="(data.disabled && !data.root && !data.isCopy) || !showVersion || isDeleted" />
+          :disabled="(data.disabled && !data.root && !data.isCopy) || !showVersion || isDeleted"
+          v-permission="[
+          'PROJECT_API_SCENARIO:READ+EDIT',
+          'PROJECT_API_SCENARIO:READ+CREATE',
+          'PROJECT_API_SCENARIO:READ+COPY',
+          ]"/>
 
         <step-extend-btns
           style="display: contents"
@@ -114,6 +124,11 @@
           @copy="copyRow"
           @remove="remove"
           @openScenario="openScenario"
+          v-permission="[
+          'PROJECT_API_SCENARIO:READ+EDIT',
+          'PROJECT_API_SCENARIO:READ+CREATE',
+          'PROJECT_API_SCENARIO:READ+COPY',
+        ]"
           v-show="isMoreButton" />
       </div>
     </div>
@@ -287,6 +302,9 @@ export default {
     },
   },
   methods: {
+    isEnabled() {
+      return this.stepFilter.get("ALlSamplerStep").indexOf(this.data.type) !== -1 && this.data.caseEnable;
+    },
     active() {
       this.$emit('active');
     },

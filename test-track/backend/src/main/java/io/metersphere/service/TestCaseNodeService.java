@@ -11,12 +11,10 @@ import io.metersphere.base.mapper.ext.ExtTestCaseMapper;
 import io.metersphere.base.mapper.ext.ExtTestCaseNodeMapper;
 import io.metersphere.base.mapper.ext.ExtTestPlanTestCaseMapper;
 import io.metersphere.base.mapper.ext.ExtTestReviewCaseMapper;
+import io.metersphere.commons.constants.MicroServiceName;
 import io.metersphere.commons.constants.TestCaseConstants;
 import io.metersphere.commons.exception.MSException;
-import io.metersphere.commons.utils.BeanUtils;
-import io.metersphere.commons.utils.CommonBeanFactory;
-import io.metersphere.commons.utils.JSON;
-import io.metersphere.commons.utils.SessionUtils;
+import io.metersphere.commons.utils.*;
 import io.metersphere.dto.NodeNumDTO;
 import io.metersphere.dto.TestCaseNodeDTO;
 import io.metersphere.dto.TestPlanCaseDTO;
@@ -31,6 +29,7 @@ import io.metersphere.plan.service.TestPlanProjectService;
 import io.metersphere.plan.service.TestPlanService;
 import io.metersphere.request.testcase.*;
 import io.metersphere.request.testreview.QueryCaseReviewRequest;
+import io.metersphere.utils.DiscoveryUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
@@ -219,6 +218,9 @@ public class TestCaseNodeService extends NodeTreeService<TestCaseNodeDTO> {
     }
 
     public List<TestCaseNodeDTO> getNodeTreeByProjectId(String projectId, QueryTestCaseRequest request) {
+        boolean queryUi = DiscoveryUtil.hasService(MicroServiceName.UI_TEST);
+        request.setQueryUi(queryUi);
+        this.setRequestWeekParam(request);
         // 判断当前项目下是否有默认模块，没有添加默认模块
         this.getDefaultNode(projectId);
         request.setProjectId(projectId);
@@ -235,6 +237,9 @@ public class TestCaseNodeService extends NodeTreeService<TestCaseNodeDTO> {
 
 
     public Map<String, Integer> getNodeCountMapByProjectId(String projectId, QueryTestCaseRequest request) {
+        boolean queryUi = DiscoveryUtil.hasService(MicroServiceName.UI_TEST);
+        request.setQueryUi(queryUi);
+        this.setRequestWeekParam(request);
         request.setProjectId(projectId);
         request.setUserId(SessionUtils.getUserId());
         request.setNodeIds(null);
@@ -437,6 +442,35 @@ public class TestCaseNodeService extends NodeTreeService<TestCaseNodeDTO> {
         }
         return pathMap;
 
+    }
+
+    public void createNodeByNodePath(String nodePath, String projectId, List<TestCaseNodeDTO> nodeTrees, Map<String, String> pathMap) {
+        if (nodePath == null) {
+            throw new ExcelException(Translator.get("test_case_module_not_null"));
+        }
+        List<String> nodeNameList = new ArrayList<>(Arrays.asList(nodePath.split("/")));
+        Iterator<String> itemIterator = nodeNameList.iterator();
+        Boolean hasNode = false;
+        String rootNodeName;
+
+        if (nodeNameList.size() <= 1) {
+            throw new ExcelException(Translator.get("test_case_create_module_fail") + ":" + nodePath);
+        } else {
+            itemIterator.next();
+            itemIterator.remove();
+            rootNodeName = itemIterator.next().trim();
+            //原来没有，新建的树nodeTrees也不包含
+            for (TestCaseNodeDTO nodeTree : nodeTrees) {
+                if (StringUtils.equals(rootNodeName, nodeTree.getName())) {
+                    hasNode = true;
+                    createNodeByPathIterator(itemIterator, "/" + rootNodeName, nodeTree,
+                            pathMap, projectId, 2);
+                }
+            }
+        }
+        if (!hasNode) {
+            createNodeByPath(itemIterator, rootNodeName, null, projectId, 1, StringUtils.EMPTY, pathMap);
+        }
     }
 
     @Override
@@ -706,5 +740,25 @@ public class TestCaseNodeService extends NodeTreeService<TestCaseNodeDTO> {
         }
         List<Map<String, Object>> moduleCountList = extTestCaseMapper.moduleExtraNodeCount(nodeIds);
         return this.parseModuleCountList(moduleCountList);
+    }
+
+    /**
+     * 设置请求参数中本周区间参数
+     * @param request 页面请求参数
+     * @return
+     */
+    private void setRequestWeekParam(QueryTestCaseRequest request) {
+        Map<String, Date> weekFirstTimeAndLastTime = DateUtils.getWeedFirstTimeAndLastTime(new Date());
+        Date weekFirstTime = weekFirstTimeAndLastTime.get("firstTime");
+        if (request.isSelectThisWeedData()) {
+            if (weekFirstTime != null) {
+                request.setCreateTime(weekFirstTime.getTime());
+            }
+        }
+        if (request.isSelectThisWeedRelevanceData()) {
+            if (weekFirstTime != null) {
+                request.setRelevanceCreateTime(weekFirstTime.getTime());
+            }
+        }
     }
 }

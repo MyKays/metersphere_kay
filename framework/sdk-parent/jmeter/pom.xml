@@ -299,6 +299,10 @@
             <artifactId>commons-dbcp2</artifactId>
             <version>${commons-dbcp2-version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -753,7 +753,8 @@ export default {
             if (
               store.apiMap.get(t.api.id).get('responseChange') === true ||
               store.apiMap.get(t.api.id).get('requestChange') === true ||
-              store.apiMap.get(t.api.id).get('fromChange') === true
+              store.apiMap.get(t.api.id).get('fromChange') === true ||
+              store.apiMap.get(t.api.id).get('customFormChange') === true
             ) {
               message += t.api.name;
               id = t.api.id;
@@ -782,6 +783,7 @@ export default {
       } else {
         if (id) {
           store.apiMap.delete(id);
+          store.saveMap.delete(id);
         }
         this.handleTabRemove(targetName);
       }
@@ -1049,6 +1051,13 @@ export default {
           t.isCopy = false;
         }
       });
+      store.apiStatus.set('fromChange', false);
+      store.apiStatus.set('requestChange', false);
+      store.apiStatus.set('responseChange', false);
+      store.apiStatus.set('customFormChange', false);
+      store.apiMap.set(data.id, store.apiStatus);
+      // 保存后将保存状态置为true
+      store.saveMap.set(data.id, true);
     },
 
     showExecResult(row) {
@@ -1100,7 +1109,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .ms-api-div {
   overflow-y: hidden;
   height: calc(100vh - 100px);

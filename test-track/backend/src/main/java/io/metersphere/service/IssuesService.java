@@ -175,6 +175,9 @@ public class IssuesService {
                     JSON.parseObject(JSON.toJSONString(issuesRequest), PlatformIssuesUpdateRequest.class);
             List<PlatformCustomFieldItemDTO> customFieldItemDTOS =
                     JSON.parseArray(JSON.toJSONString(issuesRequest.getRequestFields()), PlatformCustomFieldItemDTO.class);
+            customFieldItemDTOS = customFieldItemDTOS.stream()
+                    .filter(item -> item != null && item.getValue() != null)
+                    .toList();
             platformIssuesUpdateRequest.setCustomFieldList(customFieldItemDTOS); // todo 全部插件化后去掉
             platformIssuesUpdateRequest.setUserPlatformUserConfig(userService.getCurrentPlatformInfoStr(SessionUtils.getCurrentWorkspaceId()));
             platformIssuesUpdateRequest.setProjectConfig(PlatformPluginService.getCompatibleProjectConfig(project));
@@ -381,6 +384,9 @@ public class IssuesService {
             }
 
             List<PlatformCustomFieldItemDTO> customFieldItemDTOS = JSON.parseArray(JSON.toJSONString(issuesRequest.getRequestFields()), PlatformCustomFieldItemDTO.class);
+            customFieldItemDTOS = customFieldItemDTOS.stream()
+                    .filter(item -> item != null && item.getValue() != null)
+                    .toList();
             platformIssuesUpdateRequest.setCustomFieldList(customFieldItemDTOS); // todo 全部插件化后去掉
             platformIssuesUpdateRequest.setUserPlatformUserConfig(userService.getCurrentPlatformInfoStr(SessionUtils.getCurrentWorkspaceId()));
             platformIssuesUpdateRequest.setProjectConfig(PlatformPluginService.getCompatibleProjectConfig(project));
@@ -1290,6 +1296,7 @@ public class IssuesService {
     }
 
     public List<IssuesDao> relateList(IssuesRequest request) {
+        request.setOrders(ServiceUtils.getDefaultOrderByField(request.getOrders(), "create_time"));
         List<IssuesDao> issues = extIssuesMapper.getIssues(request);
         Map<String, User> userMap = getUserMap(issues);
         issues.forEach(issue -> {
@@ -1960,7 +1967,32 @@ public class IssuesService {
         } else {
             issueIds = Collections.EMPTY_LIST;
         }
-        request.setFilterIds(issueIds);
+
+        Map<String, String> statusMap = customFieldIssuesService.getIssueStatusMap(issueIds, request.getProjectId());
+        if (MapUtils.isEmpty(statusMap) && CollectionUtils.isNotEmpty(issueIds)) {
+            // 未找到自定义字段状态, 则获取平台状态
+            IssuesRequest issuesRequest = new IssuesRequest();
+            issuesRequest.setProjectId(SessionUtils.getCurrentProjectId());
+            issuesRequest.setFilterIds(issueIds);
+            List<IssuesDao> issues = extIssuesMapper.getIssues(issuesRequest);
+            statusMap = issues.stream().collect(Collectors.toMap(IssuesDao::getId, i -> Optional.ofNullable(i.getPlatformStatus()).orElse("new")));
+        }
+
+        if (MapUtils.isEmpty(statusMap)) {
+            request.setFilterIds(issueIds);
+        } else {
+            if (request.getUnClosedTestPlanIssue()) {
+                CustomField customField = baseCustomFieldService.getCustomFieldByName(SessionUtils.getCurrentProjectId(), SystemCustomField.ISSUE_STATUS);
+                JSONArray statusArray = JSONArray.parseArray(customField.getOptions());
+                Map<String, String> tmpStatusMap = statusMap;
+                List<String> unClosedIds = issueIds.stream()
+                        .filter(id -> !StringUtils.equals(tmpStatusMap.getOrDefault(id, StringUtils.EMPTY).replaceAll("\"", StringUtils.EMPTY), "closed"))
+                        .collect(Collectors.toList());
+                request.setFilterIds(unClosedIds);
+            } else {
+                request.setFilterIds(issueIds);
+            }
+        }
     }
 
     public boolean thirdPartTemplateEnable(String projectId) {

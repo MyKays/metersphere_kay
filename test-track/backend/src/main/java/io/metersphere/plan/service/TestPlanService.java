@@ -632,6 +632,7 @@ public class TestPlanService {
     public void testPlanRelevance(PlanCaseRelevanceRequest request) {
         LinkedHashMap<String, String> userMap;
         TestPlan testPlan = testPlanMapper.selectByPrimaryKey(request.getPlanId());
+        ServiceUtils.buildCombineTagsToSupportMultiple(request.getRequest());
         boolean isSelectAll = request.getRequest() != null && request.getRequest().isSelectAll();
         if (isSelectAll) {
             List<OrderRequest> orders = request.getRequest().getOrders();
@@ -802,6 +803,7 @@ public class TestPlanService {
     }
 
     public List<TestPlanDTO> planListAll(QueryTestPlanRequest request) {
+        request.setOrders(ServiceUtils.getDefaultOrder(request.getOrders()));
         if (StringUtils.isNotBlank(request.getProjectId())) {
             request.setProjectId(request.getProjectId());
         }

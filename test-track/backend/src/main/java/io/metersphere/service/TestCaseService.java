@@ -829,7 +829,7 @@ public class TestCaseService {
             return;
         }
         Map<String, List<CustomFieldDao>> fieldMap =
-                customFieldTestCaseService.getMapByResourceIds(data.stream().map(TestCaseDTO::getId).collect(Collectors.toList()));
+                customFieldTestCaseService.getMapByResourceIdsForList(data.stream().map(TestCaseDTO::getId).collect(Collectors.toList()));
         data.forEach(i -> i.setFields(fieldMap.get(i.getId())));
     }
 
@@ -1118,6 +1118,10 @@ public class TestCaseService {
             request.setUseCustomId(useCunstomId);
             XmindCaseParser xmindParser = new XmindCaseParser(request);
             errList = xmindParser.parse(multipartFile);
+            List<TestCaseWithBLOBs> testCase = xmindParser.getTestCase();
+            testCase.forEach(testCaseWithBLOBs -> {
+                testCaseWithBLOBs.setSteps(testCaseWithBLOBs.getSteps().replace("&amp;","&"));
+            });
             if (CollectionUtils.isEmpty(xmindParser.getNodePaths())
                     && CollectionUtils.isEmpty(xmindParser.getTestCase())
                     && CollectionUtils.isEmpty(xmindParser.getUpdateTestCase())) {
@@ -1136,9 +1140,9 @@ public class TestCaseService {
                         testCaseNodeService.createNodes(xmindParser.getNodePaths(), projectId);
                     }
                     if (CollectionUtils.isNotEmpty(xmindParser.getTestCase())) {
-                        this.saveImportData(xmindParser.getTestCase(), request, null);
-                        names = xmindParser.getTestCase().stream().map(TestCase::getName).collect(Collectors.toList());
-                        ids = xmindParser.getTestCase().stream().map(TestCase::getId).collect(Collectors.toList());
+                        this.saveImportData(testCase, request, null);
+                        names = testCase.stream().map(TestCase::getName).collect(Collectors.toList());
+                        ids = testCase.stream().map(TestCase::getId).collect(Collectors.toList());
                     }
                     if (CollectionUtils.isNotEmpty(xmindParser.getUpdateTestCase())) {
                         this.updateImportData(xmindParser.getUpdateTestCase(), request, null);
@@ -1154,8 +1158,8 @@ public class TestCaseService {
                     if (CollectionUtils.isNotEmpty(xmindParser.getUpdateTestCase())) {
                         continueCaseList.removeAll(xmindParser.getUpdateTestCase());
                         this.updateImportData(xmindParser.getUpdateTestCase(), request, null);
-                        names = xmindParser.getTestCase().stream().map(TestCase::getName).collect(Collectors.toList());
-                        ids = xmindParser.getTestCase().stream().map(TestCase::getId).collect(Collectors.toList());
+                        names = testCase.stream().map(TestCase::getName).collect(Collectors.toList());
+                        ids = testCase.stream().map(TestCase::getId).collect(Collectors.toList());
                     }
                     List<String> nodePathList = xmindParser.getValidatedNodePath();
                     if (CollectionUtils.isNotEmpty(nodePathList)) {
@@ -1256,8 +1260,15 @@ public class TestCaseService {
 
     public void saveImportData(List<TestCaseWithBLOBs> testCases, TestCaseImportRequest request,
                                Map<String, List<CustomFieldResourceDTO>> testCaseCustomFieldMap) {
+        saveImportData( testCases, request, testCaseCustomFieldMap, null);
+    }
+
+    public void saveImportData(List<TestCaseWithBLOBs> testCases, TestCaseImportRequest request,
+                               Map<String, List<CustomFieldResourceDTO>> testCaseCustomFieldMap, Map<String, String> nodePathMap) {
         String projectId = request.getProjectId();
-        Map<String, String> nodePathMap = testCaseNodeService.createNodeByTestCases(testCases, projectId);
+        if (nodePathMap == null) {
+            nodePathMap = testCaseNodeService.createNodeByTestCases(testCases, projectId);
+        }
         SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
         Project project = baseProjectService.getProjectById(projectId);
         TestCaseMapper mapper = sqlSession.getMapper(TestCaseMapper.class);
@@ -3148,12 +3159,25 @@ public class TestCaseService {
                 mapper.insert(testCase);
 
                 dealWithCopyOtherInfo(testCase, oldTestCaseId);
+                copyCustomFields(oldTestCaseId, id);
                 if (i % 50 == 0)
                     sqlSession.flushStatements();
             }
             sqlSession.flushStatements();
         } finally {
             SqlSessionUtils.closeSqlSession(sqlSession, sqlSessionFactory);
+        }
+    }
+
+    private void copyCustomFields(String oldTestCaseId, String id) {
+        CustomFieldTestCaseExample example = new CustomFieldTestCaseExample();
+        example.createCriteria().andResourceIdEqualTo(oldTestCaseId);
+        List<CustomFieldTestCase> customFieldTestCases = customFieldTestCaseMapper.selectByExampleWithBLOBs(example);
+        if (CollectionUtils.isNotEmpty(customFieldTestCases)) {
+            customFieldTestCases.forEach(customFieldTestCase -> {
+                customFieldTestCase.setResourceId(id);
+                customFieldTestCaseMapper.insertSelective(customFieldTestCase);
+            });
         }
     }
 

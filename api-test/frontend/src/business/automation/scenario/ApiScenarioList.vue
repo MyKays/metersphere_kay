@@ -678,9 +678,6 @@ export default {
           name: this.$t('api_test.create_performance_test_batch'),
           handleClick: this.batchCreatePerformance,
           permissions: ['PROJECT_API_SCENARIO:READ+CREATE_PERFORMANCE_BATCH'],
-          isDisable() {
-            return !hasPermission('PROJECT_PERFORMANCE_TEST:READ+CREATE');
-          },
         },
       ],
       typeArr: [
@@ -1141,11 +1138,6 @@ export default {
         scenarioIds: this.$refs.scenarioTable.selectIds,
       };
 
-      // todo 选取全部数据
-      if (this.condition.selectAll) {
-        this.$warning(this.$t('api_test.scenario.warning_context'));
-      }
-
       this.planVisible = false;
 
       obj.mapping = strMapToObj(params[2]);
@@ -1597,6 +1589,10 @@ export default {
       this.$emit('selection', selection);
     },
     batchCreatePerformance() {
+      if (!hasPermission('PROJECT_PERFORMANCE_TEST:READ+CREATE')) {
+        this.$warning(this.$t('api_test.create_performance_test_tips'));
+        return;
+      }
       this.$alert(this.$t('api_test.definition.request.batch_to_performance_confirm') + ' ？', '', {
         confirmButtonText: this.$t('commons.confirm'),
         callback: (action) => {

@@ -10,6 +10,7 @@
       </el-select>
       <el-button
         size="mini"
+        :disabled="request.caseEnable"
         @click="add"
         type="primary"
         v-if="tabType !== 'assertionsRule'"
@@ -114,7 +115,7 @@
             :request="request"
             :apiId="apiId"
             :draggable="true"
-            :is-read-only="data.disabled"
+            :is-read-only="request.disabled"
             :assertions="data" />
         </div>
       </span>

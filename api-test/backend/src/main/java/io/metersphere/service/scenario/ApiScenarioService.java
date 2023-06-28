@@ -757,7 +757,8 @@ public class ApiScenarioService {
         if (StringUtils.isNotEmpty(scenarioWithBLOBs.getScenarioDefinition())) {
             JSONObject element = JSONUtil.parseObject(scenarioWithBLOBs.getScenarioDefinition());
             List<String> caseIds = new ArrayList<>();
-            hashTreeService.dataFormatting(element, caseIds);
+            Map<String, Boolean> keyMap = MsHashTreeService.getIndexKeyMap(element, element.optString(ElementConstants.INDEX));
+            hashTreeService.dataFormatting(element, caseIds, keyMap);
             // 处理用例
             hashTreeService.caseFormatting(element, caseIds, getConfig(scenarioWithBLOBs));
             ElementUtil.dataFormatting(element);
@@ -885,7 +886,8 @@ public class ApiScenarioService {
                     JSONObject element = JSONUtil.parseObject(dto.getScenarioDefinition());
                     // 获取所有case
                     List<String> caseIds = new ArrayList<>();
-                    hashTreeService.dataFormatting(element, caseIds);
+                    Map<String, Boolean> keyMap = MsHashTreeService.getIndexKeyMap(element, element.optString(ElementConstants.INDEX));
+                    hashTreeService.dataFormatting(element, caseIds, keyMap);
                     // 处理用例
                     hashTreeService.caseFormatting(element, caseIds, null);
 
@@ -1719,7 +1721,7 @@ public class ApiScenarioService {
         return ApiFileUtil.listBytesToZip(files);
     }
 
-    private void checkExportEnv(List<ApiScenarioWithBLOBs> scenarios) {
+    private void checkExportEnv(List<? extends ApiScenarioWithBLOBs> scenarios) {
         StringBuilder builder = new StringBuilder();
         for (ApiScenarioWithBLOBs apiScenarioWithBLOBs : scenarios) {
             try {
@@ -1728,6 +1730,8 @@ public class ApiScenarioService {
                 if (!haveEnv) {
                     builder.append(apiScenarioWithBLOBs.getName()).append("; ");
                 }
+            } catch (RuntimeException e) {
+                MSException.throwException(Translator.get("scenario_warning"));
             } catch (Exception e) {
                 MSException.throwException("场景：" + builder.toString() + "运行环境未配置，请检查!");
             }
@@ -1962,9 +1966,10 @@ public class ApiScenarioService {
 
         List<String> ids = request.getIds();
         List<ApiScenarioDTO> apiScenarioList = extApiScenarioMapper.selectIds(ids);
+        //检查运行环境
+        checkExportEnv(apiScenarioList);
         if (CollectionUtils.isEmpty(apiScenarioList)) {
             returnDTO.setScenarioJmxList(new ArrayList<>());
-            return returnDTO;
         } else {
             Map<String, List<String>> projectEnvironments = apiScenarioEnvService.selectApiScenarioEnv(apiScenarioList);
             apiScenarioList.forEach(item -> {
@@ -1982,8 +1987,8 @@ public class ApiScenarioService {
                 returnDTO.setProjectEnvMap(projectEnvironments);
             }
             returnDTO.setJmxInfoDTOList(jmxInfoList);
-            return returnDTO;
         }
+        return returnDTO;
     }
 
     public void batchCopy(ApiScenarioBatchRequest request) {

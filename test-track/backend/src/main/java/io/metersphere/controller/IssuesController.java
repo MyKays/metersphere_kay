@@ -193,7 +193,6 @@ public class IssuesController {
     }
 
     @PostMapping("/status/count")
-    @RequiresPermissions(PermissionConstants.PROJECT_TRACK_ISSUE_READ)
     public List<IssuesStatusCountDao> getCountByStatus(@RequestBody IssuesCountRequest request) {
         return issuesService.getCountByStatus(request);
     }
@@ -224,7 +223,6 @@ public class IssuesController {
     }
 
     @GetMapping("/demand/list/{projectId}")
-    @RequiresPermissions(PermissionConstants.PROJECT_TRACK_CASE_READ)
     public List getDemandList(@PathVariable String projectId) {
         return issuesService.getDemandList(projectId);
     }

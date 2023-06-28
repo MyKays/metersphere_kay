@@ -9,10 +9,11 @@ import io.metersphere.commons.utils.Pager;
 import io.metersphere.log.service.OperatingLogService;
 import io.metersphere.log.vo.OperatingLogDTO;
 import io.metersphere.log.vo.OperatingLogRequest;
+import jakarta.annotation.Resource;
+import org.apache.shiro.authz.annotation.Logical;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,21 +24,20 @@ public class OperatingLogController {
     private OperatingLogService operatingLogService;
 
     @PostMapping("/list/{goPage}/{pageSize}")
-    @RequiresPermissions(PermissionConstants.SYSTEM_OPERATING_LOG_READ)
+    @RequiresPermissions(value = {PermissionConstants.WORKSPACE_OPERATING_LOG_READ, PermissionConstants.SYSTEM_OPERATING_LOG_READ}, logical = Logical.OR)
     public Pager<List<OperatingLogDTO>> list(@PathVariable int goPage, @PathVariable int pageSize, @RequestBody OperatingLogRequest request) {
         Page<Object> page = PageHelper.startPage(goPage, pageSize, true);
         return PageUtils.setPageInfo(page, operatingLogService.list(request));
     }
 
     @GetMapping("/get/{id}")
-    @RequiresPermissions(PermissionConstants.SYSTEM_OPERATING_LOG_READ)
+    @RequiresPermissions(value={PermissionConstants.SYSTEM_OPERATING_LOG_READ, PermissionConstants.WORKSPACE_OPERATING_LOG_READ}, logical = Logical.OR)
     public OperatingLogDTO get(@PathVariable String id) {
         return operatingLogService.get(id);
     }
 
 
     @PostMapping("/get/source/{goPage}/{pageSize}")
-    @RequiresPermissions(PermissionConstants.SYSTEM_OPERATING_LOG_READ)
     public Pager<List<OperatingLogDTO>> findBySourceId(@PathVariable int goPage, @PathVariable int pageSize, @RequestBody OperatingLogRequest request) {
         Page<Object> page = PageHelper.startPage(goPage, pageSize, true);
         return PageUtils.setPageInfo(page, operatingLogService.findBySourceId(request));

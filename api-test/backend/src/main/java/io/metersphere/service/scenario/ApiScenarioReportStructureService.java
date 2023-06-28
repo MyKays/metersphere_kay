@@ -45,8 +45,10 @@ public class ApiScenarioReportStructureService {
             ElementConstants.ABS_SAMPLER
     );
     private static final List<String> CONTROLS = Arrays.asList(
+            ElementConstants.IF_CONTROLLER
+    );
+    private static final List<String> CONTROL = Arrays.asList(
             ElementConstants.ASSERTIONS,
-            ElementConstants.IF_CONTROLLER,
             ElementConstants.CONSTANT_TIMER
     );
     private static final String RESOURCE_ID = ElementConstants.RESOURCE_ID;
@@ -168,7 +170,9 @@ public class ApiScenarioReportStructureService {
             MsHashTreeService hashTreeService = CommonBeanFactory.getBean(MsHashTreeService.class);
             assert hashTreeService != null;
             List<String> caseIds = new ArrayList<>();
-            hashTreeService.dataFormatting(element, caseIds);
+            Map<String, Boolean> keyMap = MsHashTreeService.getIndexKeyMap(element,element.optString(ElementConstants.INDEX));
+
+            hashTreeService.dataFormatting(element, caseIds, keyMap);
             // 处理用例
             hashTreeService.caseFormatting(element, caseIds, null);
 
@@ -260,7 +264,7 @@ public class ApiScenarioReportStructureService {
                         stepError.set(stepError.longValue() + 1);
                     } else if (StringUtils.equalsAnyIgnoreCase(step.getTotalStatus(), ERROR_CODE, ApiReportStatus.FAKE_ERROR.name())) {
                         stepErrorCode.set(stepErrorCode.longValue() + 1);
-                    } else if (!StringUtils.equalsIgnoreCase(step.getTotalStatus(), ApiReportStatus.SUCCESS.name())) {
+                    } else if (!StringUtils.equalsIgnoreCase(step.getTotalStatus(), ApiReportStatus.SUCCESS.name()) && !CONTROL.contains(step.getType())) {
                         stepUnExecute.set(stepUnExecute.longValue() + 1);
                         unExecSize++;
                     }
@@ -309,7 +313,6 @@ public class ApiScenarioReportStructureService {
             } else if (StringUtils.isNotEmpty(dto.getType()) && CONTROLS.contains(dto.getType()) && dto.getValue() == null) {
                 // 条件控制步骤
                 dto.setTotalStatus(ApiReportStatus.PENDING.name());
-                dto.setValue(new RequestResultExpandDTO(dto.getLabel(), ApiReportStatus.PENDING.name()));
             } else if (dto.getValue() instanceof RequestResultExpandDTO && StringUtils.isNotEmpty((dto.getValue()).getStatus())) {
                 dto.setTotalStatus((dto.getValue()).getStatus());
             } else if (dto.getValue() != null && StringUtils.isEmpty(dto.getTotalStatus())) {
@@ -377,7 +380,7 @@ public class ApiScenarioReportStructureService {
                     }
                 }
             }
-            if (StringUtils.isEmpty(dto.getTotalStatus())) {
+            if (StringUtils.isEmpty(dto.getTotalStatus()) && !CONTROL.contains(dto.getType())) {
                 dto.setTotalStatus(ApiReportStatus.PENDING.name());
             } else if (StringUtils.equalsAnyIgnoreCase(dto.getTotalStatus(), ApiReportStatus.ERROR.name())) {
                 dto.setTotalStatus(ApiReportStatus.ERROR.name());

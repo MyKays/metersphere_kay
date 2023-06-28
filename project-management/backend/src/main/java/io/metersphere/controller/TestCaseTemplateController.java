@@ -65,8 +65,12 @@ public class TestCaseTemplateController {
     }
 
     @GetMapping("/get/relate/{projectId}")
-    @RequiresPermissions(value = {PermissionConstants.PROJECT_TEMPLATE_READ_CASE_TEMPLATE, PermissionConstants.PROJECT_TRACK_CASE_READ}, logical = Logical.OR)
     public TestCaseTemplateDao getTemplate(@PathVariable String projectId) {
         return testCaseTemplateService.getTemplate(projectId);
+    }
+
+    @GetMapping("/get/relate/simple/{projectId}")
+    public TestCaseTemplateDao getTemplateForList(@PathVariable String projectId) {
+        return testCaseTemplateService.getTemplateForList(projectId);
     }
 }

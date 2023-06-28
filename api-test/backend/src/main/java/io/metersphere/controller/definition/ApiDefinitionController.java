@@ -37,6 +37,7 @@ import io.metersphere.service.definition.ApiDefinitionService;
 import io.metersphere.service.definition.FunctionRunService;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.annotation.Logical;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -68,7 +69,7 @@ public class ApiDefinitionController {
     }
 
     @PostMapping("/list/week/{projectId}/{versionId}/{goPage}/{pageSize}")
-    @RequiresPermissions(PermissionConstants.PROJECT_API_DEFINITION_READ)
+    @RequiresPermissions(value= {PermissionConstants.PROJECT_API_DEFINITION_READ, PermissionConstants.PROJECT_API_HOME}, logical = Logical.OR)
     public Pager<List<ApiDefinitionResult>> weekList(@PathVariable String projectId, @PathVariable String versionId, @PathVariable int goPage, @PathVariable int pageSize) {
         if (StringUtils.equalsIgnoreCase(versionId, "default")) {
             versionId = null;
@@ -107,7 +108,7 @@ public class ApiDefinitionController {
 
 
     @PostMapping(value = "/create", consumes = {"multipart/form-data"})
-    @RequiresPermissions(PermissionConstants.PROJECT_API_DEFINITION_READ_CREATE_API)
+    @RequiresPermissions(value= {PermissionConstants.PROJECT_API_DEFINITION_READ_CREATE_API, PermissionConstants.PROJECT_API_DEFINITION_READ_COPY_API}, logical = Logical.OR)
     @MsAuditLog(module = OperLogModule.API_DEFINITION, type = OperLogConstants.CREATE, title = "#request.name", content = "#msClass.getLogDetails(#request.id)", msClass = ApiDefinitionService.class)
     @SendNotice(taskType = NoticeConstants.TaskType.API_DEFINITION_TASK, event = NoticeConstants.Event.CREATE, subject = "接口定义通知")
     public ApiDefinitionResult create(@RequestPart("request") SaveApiDefinitionRequest request, @RequestPart(value = "files", required = false) List<MultipartFile> bodyFiles) {
@@ -179,7 +180,7 @@ public class ApiDefinitionController {
     }
 
     @PostMapping(value = "/run/debug", consumes = {"multipart/form-data"})
-    @RequiresPermissions(PermissionConstants.PROJECT_API_DEFINITION_READ_DEBUG)
+    @RequiresPermissions(value = {PermissionConstants.PROJECT_API_DEFINITION_READ_DEBUG, PermissionConstants.PROJECT_API_DEFINITION_READ_RUN}, logical = Logical.OR)
     @MsAuditLog(module = OperLogModule.API_DEFINITION, type = OperLogConstants.DEBUG, title = "#request.name", project = "#request.projectId")
     public MsExecResponseDTO runDebug(@RequestPart("request") RunDefinitionRequest request, @RequestPart(value = "files", required = false) List<MultipartFile> bodyFiles) {
         return apiDefinitionService.run(request, bodyFiles);

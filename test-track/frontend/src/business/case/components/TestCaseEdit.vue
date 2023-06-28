@@ -29,8 +29,8 @@
                 v-show="versionEnable"
                 ref="versionHistory"
                 :current-id="currentTestCaseInfo.id"
-                :is-read="readOnly"
-                :is-public-show="isPublicShow || hasReadonlyPermission"
+                :is-read="versionReadOnly"
+                :is-public-show="isPublicShow"
                 :current-version-id="form.versionId"
                 @confirmOtherInfo="confirmOtherInfo"
                 :current-project-id="projectId"
@@ -90,6 +90,7 @@
             class="edit-public-row head-opt"
             v-if="isPublicShow"
             @click="editPublicCase"
+            :class="[!hasReadonlyPermission === true ? '' : 'div-readOnly']"
           >
             <div class="icon-row">
               <img src="/assets/module/figma/icon_edit_outlined.svg" alt="" />
@@ -100,6 +101,7 @@
             class="copy-public-row head-opt"
             v-if="isPublicShow"
             @click="copyPublicCase"
+            :class="[hasCopyPermission === true ? '' : 'div-readOnly']"
           >
             <div class="icon-row">
               <img src="/assets/module/figma/icon_copy_outlined.svg" alt="" />
@@ -629,6 +631,16 @@ export default {
         !hasPermission("PROJECT_TRACK_CASE:READ+CREATE") &&
         !hasPermission("PROJECT_TRACK_CASE:READ+EDIT")
       );
+    },
+    versionReadOnly() {
+      if (this.isPublicShow || this.hasReadonlyPermission) {
+        return true;
+      }
+      const { rowClickHasPermission } = this.currentTestCaseInfo;
+      if (rowClickHasPermission !== undefined) {
+        return !rowClickHasPermission;
+      }
+      return hasPermission('PROJECT_TRACK_CASE:READ');
     },
     caseId() {
       return !this.isPublicShow ? this.$route.params.caseId : this.publicCaseId;
@@ -1766,7 +1778,9 @@ export default {
 
 <style scoped lang="scss">
 @import "@/business/style/index.scss";
-
+.div-readOnly{
+  pointer-events: none;
+}
 .case-edit-wrap {
   padding: 12px 24px 0px;
   box-sizing: border-box;
