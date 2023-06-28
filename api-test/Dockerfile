@@ -1,8 +1,8 @@
-FROM registry.cn-qingdao.aliyuncs.com/metersphere/alpine-openjdk17-jre
+FROM test.docker.yimucloud.com:5000/metersphere/alpine-openjdk17-jre
 
-LABEL maintainer="FIT2CLOUD <support@fit2cloud.com>"
+LABEL maintainer="MC <haominchao@eyimu.com>"
 
-ARG MS_VERSION=dev
+ARG MS_VERSION=2.10.2
 ARG DEPENDENCY=backend/target/dependency
 
 COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
