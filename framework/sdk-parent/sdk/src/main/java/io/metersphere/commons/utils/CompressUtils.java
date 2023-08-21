@@ -41,7 +41,7 @@ public class CompressUtils {
         return b;
     }
 
-    private final static String ZIP_PATH = "/opt/metersphere/data/tmp/";
+    private final static String ZIP_PATH = "/eyimu3/metersphere/data/tmp/";
 
     public static File getFile(String fileName) throws IOException {
         // 创建文件对象

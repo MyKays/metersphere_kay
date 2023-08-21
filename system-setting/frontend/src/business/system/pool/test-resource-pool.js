@@ -36,7 +36,7 @@ spec:
           protocol: TCP
         resources: {}
         volumeMounts:
-        - mountPath: /opt/metersphere/logs
+        - mountPath: /eyimu3/metersphere/logs
           name: metersphere-logs
       restartPolicy: Always
       volumes:
@@ -83,7 +83,7 @@ spec:
           protocol: TCP
         resources: {}
         volumeMounts:
-        - mountPath: /opt/metersphere/logs
+        - mountPath: /eyimu3/metersphere/logs
           name: metersphere-logs
       restartPolicy: Always
       volumes:

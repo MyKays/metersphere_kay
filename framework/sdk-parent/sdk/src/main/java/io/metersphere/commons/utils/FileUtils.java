@@ -27,12 +27,12 @@ import java.util.zip.ZipOutputStream;
 
 public class FileUtils {
 
-    public static final String ROOT_DIR = "/opt/metersphere/";
-    public static final String BODY_FILE_DIR = "/opt/metersphere/data/body";
-    public static final String MD_IMAGE_DIR = "/opt/metersphere/data/image/markdown";
-    public static final String UI_IMAGE_DIR = "/opt/metersphere/data/image/ui/screenshots";
-    public static final String ATTACHMENT_DIR = "/opt/metersphere/data/attachment";
-    public static final String ATTACHMENT_TMP_DIR = "/opt/metersphere/data/attachment/tmp";
+    public static final String ROOT_DIR = "/eyimu3/metersphere/";
+    public static final String BODY_FILE_DIR = "/eyimu3/metersphere/data/body";
+    public static final String MD_IMAGE_DIR = "/eyimu3/metersphere/data/image/markdown";
+    public static final String UI_IMAGE_DIR = "/eyimu3/metersphere/data/image/ui/screenshots";
+    public static final String ATTACHMENT_DIR = "/eyimu3/metersphere/data/attachment";
+    public static final String ATTACHMENT_TMP_DIR = "/eyimu3/metersphere/data/attachment/tmp";
 
     public static void validateFileName(String... fileNames) {
         if (fileNames != null) {
@@ -286,7 +286,7 @@ public class FileUtils {
 
     public static String createFile(MultipartFile bodyFile) {
         validateFileName(bodyFile.getOriginalFilename());
-        String dir = "/opt/metersphere/data/body/tmp/";
+        String dir = "/eyimu3/metersphere/data/body/tmp/";
         File fileDir = new File(dir);
         if (!fileDir.exists()) {
             fileDir.mkdirs();

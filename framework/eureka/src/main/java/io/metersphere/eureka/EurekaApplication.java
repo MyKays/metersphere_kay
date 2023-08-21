@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableEurekaServer
 @PropertySource(value = {
-        "file:/opt/metersphere/conf/metersphere.properties",
+        "file:/eyimu3/metersphere/conf/metersphere.properties",
 }, encoding = "UTF-8", ignoreResourceNotFound = true)
 @EnableScheduling
 public class EurekaApplication {
