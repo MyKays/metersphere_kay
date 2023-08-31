@@ -38,7 +38,6 @@ import {strMapToObj} from "metersphere-frontend/src/utils";
 import {ENV_TYPE} from "metersphere-frontend/src/utils/constants";
 import RelevanceUiScenarioList from "@/business/plan/view/comonents/ui/RelevanceUiScenarioList";
 import {testPlanAutoCheck} from "@/api/remote/plan/test-plan";
-import {testPlanUiScenarioRelevanceListIds} from "@/api/remote/ui/test-plan-ui-scenario-case";
 import UiScenarioModule from "@/business/plan/view/comonents/ui/UiScenarioModule";
 import {uiAutomationRelevance} from "@/api/remote/ui/api-scenario";
 
@@ -125,7 +124,7 @@ export default {
       }
       let param = {};
       param.planId = this.planId;
-      param.mapping = strMapToObj(map);
+      param.mapping = map;
       param.envMap = strMapToObj(envMap);
       param.environmentType = envType;
       param.envGroupId = envGroupId;
@@ -139,14 +138,8 @@ export default {
         this.$refs.baseRelevance.close();
       });
     },
-    getAllId(param) {
-      return new Promise((resolve) => {
-        testPlanUiScenarioRelevanceListIds(param).then((r) => {
-          resolve(r.data);
-        });
-      });
-    },
-    async saveCaseRelevance() {
+
+    saveCaseRelevance() {
       this.isSaving = true;
       let selectIds = [];
       let selectRows = this.$refs.apiScenarioList.selectRows;
@@ -154,9 +147,14 @@ export default {
       let map = this.$refs.apiScenarioList.map;
       let envGroupId = this.$refs.apiScenarioList.envGroupId;
 
-      selectRows.forEach((row) => {
-        selectIds.push(row.id);
-      });
+      if (!this.$refs.apiScenarioList.selectAll) {
+        selectRows.forEach((row) => {
+          selectIds.push(row.id);
+        });
+      } else {
+        selectIds = this.$refs.apiScenarioList.selectAllIds;
+      }
+
       if (selectIds.length < 1) {
         this.isSaving = false;
         this.$warning(this.$t("test_track.plan_view.please_choose_test_case"));
@@ -165,17 +163,10 @@ export default {
 
       let param = {};
       param.planId = this.planId;
-      param.mapping = strMapToObj(map);
+      param.mapping = map;
       param.envMap = strMapToObj(envMap);
       param.envGroupId = envGroupId;
       param.selectIds = selectIds;
-
-      //查找所有数据
-      let params = this.$refs.apiScenarioList.condition;
-      if (params.selectAll) {
-        let result = await this.getAllId(params);
-        param.selectIds = result;
-      }
       this.loading = true;
       uiAutomationRelevance(param)
           .then(() => {

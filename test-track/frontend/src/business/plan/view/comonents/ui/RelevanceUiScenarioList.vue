@@ -125,11 +125,14 @@ import {TEST_PLAN_RELEVANCE_UI_SCENARIO_CONFIGS} from "metersphere-frontend/src/
 import {ENV_TYPE} from "metersphere-frontend/src/utils/constants";
 import MsTable from "metersphere-frontend/src/components/table/MsTable";
 import {getOwnerProjects, getVersionFilters} from "@/business/utils/sdk-utils";
-import {testPlanUiScenarioRelevanceList} from "@/api/remote/ui/test-plan-ui-scenario-case";
+import {
+  testPlanUiScenarioRelevanceList,
+  testPlanUiScenarioRelevanceListIds
+} from "@/api/remote/ui/test-plan-ui-scenario-case";
 import {getCustomTableWidth} from "metersphere-frontend/src/utils/tableUtils";
 import MsTableColumn from "metersphere-frontend/src/components/table/MsTableColumn";
 import EnvGroupPopover from "@/business/plan/env/EnvGroupPopover";
-import {getUiScenarioEnvByProjectId} from "@/api/remote/ui/ui-automation";
+import {getUiScenarioEnvByProjectId, getUiScenarioIdProject} from "@/api/remote/ui/ui-automation";
 
 export default {
   name: "RelevanceUiScenarioList",
@@ -165,6 +168,7 @@ export default {
       currentScenario: {},
       schedule: {},
       selectAll: false,
+      selectAllIds: [],
       tableData: [],
       currentPage: 1,
       pageSize: 10,
@@ -290,6 +294,7 @@ export default {
     },
     selectCountChange(data) {
       this.selectRows = this.$refs.scenarioTable.selectRows;
+      this.selectAll = this.$refs.scenarioTable.condition.selectAll;
       this.$emit("selectCountChange", data);
       this.initProjectIds();
     },
@@ -298,17 +303,38 @@ export default {
     },
     initProjectIds() {
       this.projectIds.clear();
-      this.map.clear();
-      this.selectRows.forEach((row) => {
-        getUiScenarioEnvByProjectId(row.id).then((res) => {
-          let data = res.data;
-          data.projectIds.forEach((d) => this.projectIds.add(d));
-          this.map.set(row.id, data.projectIds);
+      this.map = new Map();
+      if (!this.selectAll) {
+        let selectIds = [];
+        this.selectRows.forEach((row) => {
+          selectIds.push(row.id);
         });
-      });
+        getUiScenarioIdProject(selectIds).then((res) => {
+          this.map = res.data || {};
+          let newProjectIds = [];
+          for (let key of Object.keys(this.map)) {
+            newProjectIds.push(...this.map[key])
+          }
+          this.projectIds = new Set(newProjectIds)
+        });
+      } else {
+        testPlanUiScenarioRelevanceListIds(this.condition).then((res) => {
+          this.selectAllIds = res.data;
+          getUiScenarioIdProject(this.selectAllIds).then((res) => {
+            this.map = res.data || {};
+            let newProjectIds = [];
+            for (let key of Object.keys(this.map)) {
+              newProjectIds.push(...this.map[key])
+            }
+            this.projectIds = new Set(newProjectIds)
+          });
+        });
+      }
     },
-    closeEnv(){
-      this.$refs.envPopover.close();
+    closeEnv() {
+      if (this.$refs.envPopover) {
+        this.$refs.envPopover.close();
+      }
     }
   }
 };
