@@ -1,4 +1,4 @@
-FROM registry.cn-qingdao.aliyuncs.com/metersphere/alpine-openjdk17-jre
+FROM test.docker.yimucloud.com:5000/metersphere/alpine-openjdk17-jre
 
 LABEL maintainer="FIT2CLOUD <support@fit2cloud.com>"
 
@@ -18,7 +18,7 @@ COPY src/main/resources/static/fonts /app/static/fonts
 COPY src/main/resources/static/img /app/static/img
 COPY src/main/resources/static/js /app/static/js
 COPY src/main/resources/static/css /app/static/css
-COPY src/main/resources/static/*.worker.js /app/static/
+#COPY src/main/resources/static/*.worker.js /app/static/
 
 
 ENV JAVA_CLASSPATH=/app:/app/lib/*

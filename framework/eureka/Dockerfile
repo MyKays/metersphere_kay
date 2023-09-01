@@ -1,4 +1,4 @@
-FROM registry.cn-qingdao.aliyuncs.com/metersphere/alpine-openjdk17-jre
+FROM test.docker.yimucloud.com:5000/metersphere/alpine-openjdk17-jre
 
 LABEL maintainer="FIT2CLOUD <support@fit2cloud.com>"
 
