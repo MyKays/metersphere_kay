@@ -170,6 +170,62 @@
                     <overWriteSnapshots>true</overWriteSnapshots>
                 </configuration>
             </plugin>
+            <plugin>
+                <!--解压jar包-->
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>package</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <tasks>
+                                <echo message="target/${project.artifactId}-${project.version}.jar" />
+                                <unzip src="target/${project.artifactId}-${project.version}.jar" dest="target/dependency" />
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!--docker打包并上传私服-->
+                <!-- https://mvnrepository.com/artifact/com.spotify/docker-maven-plugin -->
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>1.2.2</version>
+                <executions>
+                    <!-- 当mvn执行package操作的时候，执行docker的build和push -->
+                    <execution>
+                        <id>buildAndPush</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- 连接到 带docker环境的linux服务器 编译image -->
+                    <dockerHost>http://docker-server:2375</dockerHost>
+                    <!-- Dockerfile文件路径 -->
+                    <dockerDirectory>${basedir}/../</dockerDirectory>
+                    <!-- <dockerDirectory>${project.parent.basedir}</dockerDirectory>-->
+                    <!-- 格式：私有仓库/镜像名称:版本号, 如果要执行push操作， 那么镜像名称必须为私有仓库为前缀，不然无效。-->
+                    <imageName>test.docker.yimucloud.com:5000/metersphere/${project.artifactId}:${project.version}</imageName>
+
+                    <!-- push到 docker hub 开始 -->
+                    <!-- serverId 这个是配置在maven的setting.xml中私服的登录账户信息-->
+                    <serverId>test.docker.yimucloud.com:5000</serverId>
+                    <retryPushCount>1</retryPushCount>
+                    <retryPushTimeout>2000</retryPushTimeout>
+                    <registryUrl>https://test.docker.yimucloud.com:5000/</registryUrl>
+                    <!-- push到 docker hub 结束 -->
+
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
